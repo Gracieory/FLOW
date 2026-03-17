@@ -424,8 +424,19 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
   <!-- PAGE: HISTORY -->
   <div class="page" id="page-history">
     <div class="history-section" style="margin-top:1rem">
-      <p class="section-label" style="margin-bottom:14px" data-i18n="historyLabel">历史记录</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <p class="section-label" data-i18n="historyLabel">历史记录</p>
+        <button onclick="openManualEntry()" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--pulse);background:none;border:0.5px solid rgba(107,143,107,0.4);border-radius:20px;padding:5px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;" data-i18n="addManual">+ 补录记录</button>
+      </div>
       <div id="historyList"><div class="empty-hint" data-i18n="noHistory">暂无历史记录</div></div>
+    </div>
+
+    <div class="history-section" style="margin-top:1.5rem;padding-bottom:2rem;" id="trashSection">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <p class="section-label" data-i18n="trashLabel">最近删除</p>
+        <button onclick="clearTrash()" id="clearTrashBtn" style="font-size:11px;color:var(--ink-muted);background:none;border:none;cursor:pointer;padding:0;" data-i18n="clearAll">全部清空</button>
+      </div>
+      <div id="trashList"><div class="empty-hint" data-i18n="trashEmpty">无已删除记录</div></div>
     </div>
   </div>
 
@@ -610,6 +621,43 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
   </div>
 </div>
 
+<!-- MANUAL ENTRY MODAL -->
+<div class="modal-overlay" id="manualOverlay" onclick="closeManualOutside(event)">
+  <div class="modal">
+    <h3 data-i18n="manualTitle">补录工时记录</h3>
+
+    <select id="manualProject" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;margin-bottom:8px;appearance:none;"></select>
+
+    <input type="date" id="manualDate" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;margin-bottom:8px;">
+
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <div style="flex:1;">
+        <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;letter-spacing:0.06em;" data-i18n="startTimeLabel">开始时间</div>
+        <input type="time" id="manualStart" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:14px;">
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;letter-spacing:0.06em;" data-i18n="endTimeLabel">结束时间</div>
+        <input type="time" id="manualEnd" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:14px;">
+      </div>
+    </div>
+
+    <div id="manualCalc" style="display:none;background:rgba(107,143,107,0.08);border:0.5px solid rgba(107,143,107,0.3);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12px;color:var(--ink-muted);" data-i18n="calcDuration">计算工时</span>
+      <span id="manualDurDisplay" style="font-family:'DM Mono',monospace;font-size:16px;font-weight:400;color:#3d6b3d;">—</span>
+    </div>
+
+    <div style="position:relative;margin-bottom:4px;">
+      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--ink-muted);">$</span>
+      <input type="number" id="manualRate" min="0" placeholder="时薪（可选）" style="width:100%;padding:9px 12px 9px 26px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;">
+    </div>
+
+    <div class="modal-btns" style="margin-top:12px;">
+      <button onclick="closeManual()" data-i18n="cancel">取消</button>
+      <button class="btn-confirm" onclick="saveManualEntry()" data-i18n="save">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD PROJECT MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal">
@@ -777,9 +825,77 @@ function renderHistory() {
 
 function deleteHistory(idx) {
   const h = loadHistory();
-  h.splice(idx, 1);
+  const deleted = h.splice(idx, 1)[0];
   localStorage.setItem('flow_history', JSON.stringify(h));
+
+  // Move to trash with timestamp
+  const trash = loadTrash();
+  deleted._deletedAt = Date.now();
+  trash.unshift(deleted);
+  localStorage.setItem('flow_trash', JSON.stringify(trash.slice(0, 30)));
+
   renderHistory();
+  renderTrash();
+}
+
+function loadTrash() {
+  try { return JSON.parse(localStorage.getItem('flow_trash') || '[]'); }
+  catch(e) { return []; }
+}
+
+function restoreFromTrash(idx) {
+  const trash = loadTrash();
+  const item = trash.splice(idx, 1)[0];
+  delete item._deletedAt;
+  localStorage.setItem('flow_trash', JSON.stringify(trash));
+  saveHistory(item);
+  renderHistory();
+  renderTrash();
+}
+
+function deleteFromTrash(idx) {
+  const trash = loadTrash();
+  trash.splice(idx, 1);
+  localStorage.setItem('flow_trash', JSON.stringify(trash));
+  renderTrash();
+}
+
+function clearTrash() {
+  localStorage.removeItem('flow_trash');
+  renderTrash();
+}
+
+function renderTrash() {
+  const trash = loadTrash();
+  const el = document.getElementById('trashList');
+  const btn = document.getElementById('clearTrashBtn');
+  if (!el) return;
+
+  if (!trash.length) {
+    el.innerHTML = `<div class="empty-hint">${t('trashEmpty')}</div>`;
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+
+  if (btn) btn.style.display = 'block';
+
+  el.innerHTML = trash.map((item, i) => {
+    const daysAgo = Math.floor((Date.now() - (item._deletedAt||Date.now())) / 86400000);
+    const when = daysAgo === 0 ? (lang==='zh'?'今天删除':'Deleted today')
+                : daysAgo === 1 ? (lang==='zh'?'昨天删除':'Deleted yesterday')
+                : lang==='zh' ? `${daysAgo}天前删除` : `Deleted ${daysAgo}d ago`;
+    return `<div class="history-item" style="opacity:0.75;">
+      <div class="h-left">
+        <div class="h-proj">${item.project}</div>
+        <div class="h-date">${item.dateStr} · <span style="color:var(--amber);font-size:10px;">${when}</span></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="h-dur">${item.duration}</span>
+        <button onclick="restoreFromTrash(${i})" style="background:none;border:0.5px solid var(--pulse);color:#3d6b3d;border-radius:12px;padding:3px 9px;font-size:11px;cursor:pointer;white-space:nowrap;">${lang==='zh'?'恢复':'Restore'}</button>
+        <button onclick="deleteFromTrash(${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-muted);padding:4px;border-radius:6px;line-height:1;" onmouseover="this.style.color='#c0392b'" onmouseout="this.style.color='var(--ink-muted)'">✕</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function openEdit(idx) {
@@ -1138,12 +1254,96 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
-  if (tab === 'history') renderHistory();
+  if (tab === 'history') { renderHistory(); renderTrash(); }
   if (tab === 'export') renderExportPreview();
   if (tab === 'settings') renderGeoSettings();
 }
 
-// ─── GEOFENCING ──────────────────────────────────────
+// ─── MANUAL ENTRY ────────────────────────────────────
+function openManualEntry() {
+  // Populate project dropdown
+  const projects = loadProjects();
+  const sel = document.getElementById('manualProject');
+  sel.innerHTML = projects.length
+    ? projects.map((p,i) => `<option value="${i}">${p.name}</option>`).join('')
+    : `<option value="">${lang==='zh'?'无项目（请先新增）':'No projects yet'}</option>`;
+
+  // Default to today
+  const now = new Date();
+  document.getElementById('manualDate').value =
+    now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  document.getElementById('manualStart').value = '';
+  document.getElementById('manualEnd').value = '';
+  document.getElementById('manualRate').value = '';
+  document.getElementById('manualDurDisplay').textContent = '—';
+
+  document.getElementById('manualOverlay').classList.add('open');
+
+  // Live calc
+  ['manualStart','manualEnd'].forEach(id => {
+    document.getElementById(id).oninput = calcManualDuration;
+  });
+}
+
+function calcManualDuration() {
+  const start = document.getElementById('manualStart').value;
+  const end   = document.getElementById('manualEnd').value;
+  const calc  = document.getElementById('manualCalc');
+  const disp  = document.getElementById('manualDurDisplay');
+  if (!start || !end) { disp.textContent = '—'; return; }
+
+  const [sh,sm] = start.split(':').map(Number);
+  let   [eh,em] = end.split(':').map(Number);
+  let ms = ((eh*60+em) - (sh*60+sm)) * 60000;
+  if (ms <= 0) ms += 24*3600000; // crosses midnight
+
+  const totalSec = Math.floor(ms/1000);
+  disp.textContent = pad(Math.floor(totalSec/3600))+':'+pad(Math.floor((totalSec%3600)/60))+':'+pad(totalSec%60);
+  calc.style.display = 'flex';
+}
+
+function closeManual() {
+  document.getElementById('manualOverlay').classList.remove('open');
+}
+
+function closeManualOutside(e) {
+  if (e.target === document.getElementById('manualOverlay')) closeManual();
+}
+
+function saveManualEntry() {
+  const projects = loadProjects();
+  const projIdx  = parseInt(document.getElementById('manualProject').value);
+  const projName = projects[projIdx]?.name || (lang==='zh'?'未命名项目':'Unnamed');
+  const dateVal  = document.getElementById('manualDate').value;
+  const start    = document.getElementById('manualStart').value;
+  const end      = document.getElementById('manualEnd').value;
+  const rate     = parseFloat(document.getElementById('manualRate').value) || 0;
+
+  if (!dateVal || !start || !end) {
+    alert(lang==='zh'?'请填写日期、开始和结束时间':'Please fill in date, start and end time');
+    return;
+  }
+
+  const [sh,sm] = start.split(':').map(Number);
+  let   [eh,em] = end.split(':').map(Number);
+  const [y,mo,d] = dateVal.split('-').map(Number);
+
+  const ts = new Date(y, mo-1, d, sh, sm).getTime();
+  let ms = ((eh*60+em) - (sh*60+sm)) * 60000;
+  if (ms <= 0) ms += 24*3600000;
+
+  const totalSec = Math.floor(ms/1000);
+  const duration = pad(Math.floor(totalSec/3600))+':'+pad(Math.floor((totalSec%3600)/60))+':'+pad(totalSec%60);
+  const dateStr  = lang==='zh'
+    ? `${mo}月${d}日`
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1]+' '+d;
+
+  saveHistory({ project: projName, dateStr, duration, ms, ts, rate });
+  closeManual();
+  switchTab('history');
+}
+
+
 let geoWatchId = null;
 let geoRadius = 200;
 let geoReminderShown = false;
@@ -1505,6 +1705,7 @@ const STRINGS = {
     sessionWork: '工作中', sessionBreak: '休息', inProgress: '进行中',
     paused: '已暂停',
     historyLabel: '历史记录', noHistory: '暂无历史记录',
+    trashLabel: '最近删除', trashEmpty: '无已删除记录', clearAll: '全部清空',
     exportRange: '导出范围', rangeToday: '今天', rangeWeek: '本周', rangeMonth: '本月', rangeAll: '全部',
     previewLabel: '报表预览', reportHeader: 'FLOW · 工时报告', previewLoading: '加载中...',
     statTotal: '总工时', statDays: '记录天数', statAvg: '平均/天', statAmount: '应收金额',
@@ -1523,6 +1724,8 @@ const STRINGS = {
     projSubPH: '备注（可选），如：UI/UX 迭代', projRatePH: '时薪（可选），如：300',
     cancel: '取消', add: '添加', save: '保存',
     editTitle: '编辑记录',
+    manualTitle: '补录工时记录', addManual: '+ 补录记录',
+    startTimeLabel: '开始时间', endTimeLabel: '结束时间', calcDuration: '计算工时',
     pickerTitle: '补录开始时间', confirm: '确认',
     reportTitle: '工时报告', reportGenerated: '由 Flow 自动生成',
     summarySheet: '摘要', detailSheet: '明细',
@@ -1545,6 +1748,7 @@ const STRINGS = {
     sessionWork: 'Working', sessionBreak: 'Break', inProgress: 'In progress',
     paused: 'Paused',
     historyLabel: 'History', noHistory: 'No history yet',
+    trashLabel: 'Recently Deleted', trashEmpty: 'No deleted records', clearAll: 'Clear all',
     exportRange: 'Date Range', rangeToday: 'Today', rangeWeek: 'This Week', rangeMonth: 'This Month', rangeAll: 'All Time',
     previewLabel: 'Preview', reportHeader: 'FLOW · TIME REPORT', previewLoading: 'Loading...',
     statTotal: 'Total Hours', statDays: 'Days', statAvg: 'Avg/Day', statAmount: 'Billable',
@@ -1563,6 +1767,8 @@ const STRINGS = {
     projSubPH: 'Note (optional), e.g. UI/UX iteration', projRatePH: 'Hourly rate (optional), e.g. 120',
     cancel: 'Cancel', add: 'Add', save: 'Save',
     editTitle: 'Edit Record',
+    manualTitle: 'Add Time Entry', addManual: '+ Add Entry',
+    startTimeLabel: 'Start time', endTimeLabel: 'End time', calcDuration: 'Duration',
     pickerTitle: 'Set Start Time', confirm: 'Confirm',
     reportTitle: 'Time Report', reportGenerated: 'Generated by Flow',
     summarySheet: 'Summary', detailSheet: 'Details',
