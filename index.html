@@ -1576,8 +1576,12 @@ async function exportPDF() {
   overlay.id = 'pdfOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;';
 
-  overlay.innerHTML = `
-    <div style="padding:16px 16px 100px;font-family:'DM Sans',sans-serif;color:#2C2720;">
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#fff;display:flex;flex-direction:column;';
+
+  const scrollArea = document.createElement('div');
+  scrollArea.style.cssText = 'flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 24px;font-family:"DM Sans",sans-serif;color:#2C2720;';
+
+  scrollArea.innerHTML = `
       <div style="background:#F5F2ED;padding:12px 16px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end;">
         <div>
           <p style="font-size:9px;color:#7A7269;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">${t('reportHeader')}</p>
@@ -1586,10 +1590,10 @@ async function exportPDF() {
         <p style="font-size:11px;color:#7A7269;">${dateStr}</p>
       </div>
       <div style="display:grid;grid-template-columns:repeat(${hasRate?4:3},1fr);gap:8px;margin-bottom:14px;">
-        <div style="background:#F5F2ED;border-radius:6px;padding:10px 10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statTotal')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;">${msToHours(totalMs)}h</span></div>
-        <div style="background:#F5F2ED;border-radius:6px;padding:10px 10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statDays')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;">${lang==='zh'?days+'天':days+(days===1?' day':' days')}</span></div>
-        <div style="background:#F5F2ED;border-radius:6px;padding:10px 10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statAvg')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;">${msToHours(avg)}h</span></div>
-        ${hasRate?`<div style="background:#F5F2ED;border-radius:6px;padding:10px 10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statAmount')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;color:#3d6b3d;">$${Math.round(totalAmount).toLocaleString()}</span></div>`:''}
+        <div style="background:#F5F2ED;border-radius:6px;padding:10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statTotal')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;">${msToHours(totalMs)}h</span></div>
+        <div style="background:#F5F2ED;border-radius:6px;padding:10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statDays')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;">${lang==='zh'?days+'天':days+(days===1?' day':' days')}</span></div>
+        <div style="background:#F5F2ED;border-radius:6px;padding:10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statAvg')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;">${msToHours(avg)}h</span></div>
+        ${hasRate?`<div style="background:#F5F2ED;border-radius:6px;padding:10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statAmount')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;color:#3d6b3d;">$${Math.round(totalAmount).toLocaleString()}</span></div>`:''}
       </div>
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead><tr style="background:#E8E3DA;">
@@ -1603,17 +1607,17 @@ async function exportPDF() {
       </table>
       <div style="margin-top:14px;padding-top:10px;border-top:0.5px solid #E0DBD3;display:flex;justify-content:space-between;font-size:10px;color:#7A7269;">
         <span>${t('reportGenerated')}</span><span>gracieory.github.io/FLOW/</span>
-      </div>
-    </div>
-    <div style="position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:0.5px solid #E0DBD3;padding:12px 16px;display:flex;gap:10px;z-index:1;">
-      <button onclick="closePdfOverlay()" style="flex:1;padding:13px;border-radius:14px;border:0.5px solid #E0DBD3;background:#F5F2ED;color:#7A7269;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">${lang==='zh'?'关闭':'Close'}</button>
-      <button onclick="doPrint()" style="flex:2;padding:13px;border-radius:14px;border:none;background:#2C2720;color:#F5F2ED;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">${lang==='zh'?'打印 / 存为 PDF':'Print / Save PDF'}</button>
-    </div>`;
+      </div>`;
 
+  const btnBar = document.createElement('div');
+  btnBar.style.cssText = 'flex-shrink:0;background:#fff;border-top:0.5px solid #E0DBD3;padding:12px 16px 28px;display:flex;gap:10px;';
+  btnBar.innerHTML = `
+    <button onclick="closePdfOverlay()" style="flex:1;padding:13px;border-radius:14px;border:0.5px solid #E0DBD3;background:#F5F2ED;color:#7A7269;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">${lang==='zh'?'关闭':'Close'}</button>
+    <button onclick="doPrint()" style="flex:2;padding:13px;border-radius:14px;border:none;background:#2C2720;color:#F5F2ED;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">${lang==='zh'?'打印 / 存为 PDF':'Print / Save PDF'}</button>`;
+
+  overlay.appendChild(scrollArea);
+  overlay.appendChild(btnBar);
   document.body.appendChild(overlay);
-
-  // Scroll to top
-  overlay.scrollTop = 0;
 }
 
 function doPrint() {
