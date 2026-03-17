@@ -671,8 +671,9 @@ let tickInterval = null;
 
 // ─── STORAGE ─────────────────────────────────────────
 function save() {
+  const selIdx = document.getElementById('projectSelect')?.value || '0';
   localStorage.setItem('flow_state', JSON.stringify({
-    state, workStartTs, breakStartTs, sessions
+    state, workStartTs, breakStartTs, sessions, selectedProject: selIdx
   }));
 }
 
@@ -684,6 +685,13 @@ function load() {
     workStartTs = d.workStartTs;
     breakStartTs = d.breakStartTs;
     sessions = d.sessions || [];
+    // Restore selected project after renderProjects runs
+    if (d.selectedProject !== undefined) {
+      setTimeout(() => {
+        const sel = document.getElementById('projectSelect');
+        if (sel) sel.value = d.selectedProject;
+      }, 0);
+    }
   } catch(e) {}
 }
 
@@ -1380,8 +1388,15 @@ async function exportPDF() {
     td { padding:8px 10px; border-bottom:0.5px solid #E0DBD3; }
     .total-row td { background:#E8E3DA; font-weight:500; }
     .footer { margin-top:20px; padding-top:10px; border-top:0.5px solid #E0DBD3; display:flex; justify-content:space-between; font-size:10px; color:#7A7269; }
-    @media print { body { padding:8mm 10mm; } }
+    .close-bar { position:fixed; top:0; left:0; right:0; background:#2C2720; color:#F5F2ED; display:flex; justify-content:space-between; align-items:center; padding:10px 16px; font-size:13px; z-index:999; }
+    .close-btn { background:rgba(255,255,255,0.15); border:none; color:#F5F2ED; padding:6px 16px; border-radius:20px; cursor:pointer; font-size:12px; }
+    @media print { body { padding:8mm 10mm; } .close-bar { display:none; } }
   </style></head><body>
+  <div class="close-bar">
+    <span>${lang==='zh' ? '工时报告预览' : 'Report Preview'}</span>
+    <button class="close-btn" onclick="window.close()">${lang==='zh' ? '← 返回' : '← Back'}</button>
+  </div>
+  <div style="height:44px;"></div>
   <div class="header">
     <div><p style="font-size:10px;color:#7A7269;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px">${t('reportHeader')}</p><h1>${ranges()[currentRange]} ${lang==='zh'?'工时报告':'Report'}</h1></div>
     <p>${lang==='zh'?now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日':['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]+' '+now.getDate()+', '+now.getFullYear()}</p>
@@ -1401,7 +1416,14 @@ async function exportPDF() {
     ${hasRate ? `<tfoot><tr class="total-row"><td>${t('total')}</td><td></td><td style="font-family:monospace">${msToHours(totalMs)}h</td><td style="color:#3d6b3d">$${Math.round(totalAmount).toLocaleString()}</td></tr></tfoot>` : ''}
   </table>
   <div class="footer"><span>${t('reportGenerated')}</span><span>gracieory.github.io/FLOW/</span></div>
-  <script>window.onload=()=>{window.print();}<\/script>
+  <script>
+    window.onload = () => {
+      setTimeout(() => window.print(), 300);
+    };
+    window.onafterprint = () => {
+      // After print or cancel, page stays open with the close button visible
+    };
+  <\/script>
   </body></html>`;
 
   const w = window.open('', '_blank');
