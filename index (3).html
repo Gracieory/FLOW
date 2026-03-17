@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Flow · 工时计时器</title>
+<title>Flow · Time Tracker</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2C2720">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -356,7 +356,7 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
     </div>
     <span class="status-pill" id="statusPill">
       <span class="status-dot"></span>
-      <span id="statusText">待开始</span>
+      <span id="statusText" data-i18n="statusIdle">待开始</span>
     </span>
   </div>
 
@@ -365,59 +365,57 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
 
     <div class="project-bar">
       <select class="project-select" id="projectSelect"></select>
-      <button class="btn-new-proj" onclick="openModal()" title="新增项目">+</button>
+      <button class="btn-new-proj" onclick="openModal()" id="newProjBtn">+</button>
     </div>
 
     <div class="ring-wrap">
       <div class="ring" id="mainRing">
         <div class="ring-inner">
           <span class="time-main" id="timerDisplay">00:00:00</span>
-          <span class="time-label" id="timerLabel">净工时</span>
+          <span class="time-label" id="timerLabel" data-i18n="netHours">净工时</span>
         </div>
       </div>
     </div>
 
     <div class="project-info">
-      <p class="start-hint" id="startHint">点击开始后切换 App 也会持续计时</p>
+      <p class="start-hint" id="startHint" data-i18n="startHint">点击开始后切换 App 也会持续计时</p>
       <div style="display:flex;justify-content:center;margin-bottom:1.25rem;">
-        <button onclick="openTimePicker()" style="display:inline-flex;align-items:center;padding:7px 18px;border-radius:20px;border:0.5px solid var(--divider);background:var(--card);font-size:12px;color:var(--ink-muted);cursor:pointer;font-family:'DM Sans',sans-serif;" id="backfillBtn">
-          忘记打卡？补录开始时间
-        </button>
+        <button onclick="openTimePicker()" style="display:inline-flex;align-items:center;padding:7px 18px;border-radius:20px;border:0.5px solid var(--divider);background:var(--card);font-size:12px;color:var(--ink-muted);cursor:pointer;font-family:'DM Sans',sans-serif;" id="backfillBtn" data-i18n="backfillBtn">忘记打卡？补录开始时间</button>
       </div>
     </div>
 
     <div class="backfill-bar" id="backfillBar">
-      <span class="backfill-label">实际开始于</span>
+      <span class="backfill-label" data-i18n="startedAt">实际开始于</span>
       <span class="time-input" id="backfillDisplay">—</span>
       <button class="backfill-clear" onclick="clearBackfill()">✕</button>
     </div>
 
     <div class="btn-row" id="btnRow">
-      <button class="btn primary" onclick="startWork()">开始工作</button>
+      <button class="btn primary" onclick="startWork()" data-i18n="btnStart">开始工作</button>
     </div>
 
     <div class="break-banner" id="breakBanner">
       <span style="font-size:18px">☕</span>
       <div>
-        <div class="break-title">休息中</div>
-        <div class="break-sub" id="breakDurText">已暂停 00:00</div>
+        <div class="break-title" data-i18n="onBreak">休息中</div>
+        <div class="break-sub" id="breakDurText"></div>
       </div>
     </div>
 
     <div class="finished-card" id="finishedCard">
-      <div class="finished-title">今日工作已结束 ✓</div>
+      <div class="finished-title" data-i18n="workDone">今日工作已结束 ✓</div>
       <div class="finished-time" id="finishedTime">—</div>
-      <div class="finished-sub" id="finishedSub">净工时已记录</div>
+      <div class="finished-sub" id="finishedSub" data-i18n="hoursRecorded">净工时已记录</div>
     </div>
 
     <div class="section-wrap">
       <div class="divider-line"></div>
-      <p class="section-label">今日时间线</p>
+      <p class="section-label" data-i18n="todayTimeline">今日时间线</p>
       <div class="session-list" id="sessionList">
-        <div class="empty-hint">暂无记录</div>
+        <div class="empty-hint" data-i18n="noRecords">暂无记录</div>
       </div>
       <div class="total-row">
-        <span class="total-label">今日净工时</span>
+        <span class="total-label" data-i18n="todayNet">今日净工时</span>
         <span class="total-val" id="totalVal">—</span>
       </div>
     </div>
@@ -426,8 +424,8 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
   <!-- PAGE: HISTORY -->
   <div class="page" id="page-history">
     <div class="history-section" style="margin-top:1rem">
-      <p class="section-label" style="margin-bottom:14px">历史记录</p>
-      <div id="historyList"><div class="empty-hint">暂无历史记录</div></div>
+      <p class="section-label" style="margin-bottom:14px" data-i18n="historyLabel">历史记录</p>
+      <div id="historyList"><div class="empty-hint" data-i18n="noHistory">暂无历史记录</div></div>
     </div>
   </div>
 
@@ -436,40 +434,40 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
     <div style="padding:1rem 1.5rem 0;">
 
       <div style="margin-bottom:1.5rem;">
-        <p class="section-label" style="margin-bottom:12px">导出范围</p>
+        <p class="section-label" style="margin-bottom:12px" data-i18n="exportRange">导出范围</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="range-btn active" data-range="today" onclick="selectRange(this)">今天</button>
-          <button class="range-btn" data-range="week" onclick="selectRange(this)">本周</button>
-          <button class="range-btn" data-range="month" onclick="selectRange(this)">本月</button>
-          <button class="range-btn" data-range="all" onclick="selectRange(this)">全部</button>
+          <button class="range-btn active" data-range="today" onclick="selectRange(this)" data-i18n="rangeToday">今天</button>
+          <button class="range-btn" data-range="week" onclick="selectRange(this)" data-i18n="rangeWeek">本周</button>
+          <button class="range-btn" data-range="month" onclick="selectRange(this)" data-i18n="rangeMonth">本月</button>
+          <button class="range-btn" data-range="all" onclick="selectRange(this)" data-i18n="rangeAll">全部</button>
         </div>
       </div>
 
       <div style="margin-bottom:1.5rem;">
-        <p class="section-label" style="margin-bottom:12px">报表预览</p>
+        <p class="section-label" style="margin-bottom:12px" data-i18n="previewLabel">报表预览</p>
         <div id="exportPreview" style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);overflow:hidden;">
           <!-- preview header -->
           <div style="background:var(--sand);padding:16px 18px;border-bottom:0.5px solid var(--divider);">
-            <div style="font-size:11px;color:var(--ink-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">FLOW · 工时报告</div>
-            <div style="font-size:16px;font-weight:500;color:var(--ink);" id="previewTitle">加载中...</div>
+            <div style="font-size:11px;color:var(--ink-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;" data-i18n="reportHeader">FLOW · 工时报告</div>
+            <div style="font-size:16px;font-weight:500;color:var(--ink);" id="previewTitle" data-i18n="previewLoading">加载中...</div>
             <div style="font-size:12px;color:var(--ink-muted);margin-top:2px;" id="previewPeriod"></div>
           </div>
           <!-- stats row -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border-bottom:0.5px solid var(--divider);">
             <div style="padding:12px 14px;border-right:0.5px solid var(--divider);">
-              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">总工时</div>
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;" data-i18n="statTotal">总工时</div>
               <div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);" id="prevTotal">—</div>
             </div>
             <div style="padding:12px 14px;border-right:0.5px solid var(--divider);">
-              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">记录天数</div>
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;" data-i18n="statDays">记录天数</div>
               <div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);" id="prevDays">—</div>
             </div>
             <div style="padding:12px 14px;border-right:0.5px solid var(--divider);">
-              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">平均/天</div>
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;" data-i18n="statAvg">平均/天</div>
               <div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);" id="prevAvg">—</div>
             </div>
             <div style="padding:12px 14px;">
-              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;">应收金额</div>
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;" data-i18n="statAmount">应收金额</div>
               <div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--pulse);" id="prevAmount">—</div>
             </div>
           </div>
@@ -479,17 +477,17 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
       </div>
 
       <div style="margin-bottom:1rem;">
-        <p class="section-label" style="margin-bottom:12px">导出格式</p>
+        <p class="section-label" style="margin-bottom:12px" data-i18n="exportFormat">导出格式</p>
         <div style="display:flex;gap:10px;">
           <button class="export-btn" id="pdfBtn" onclick="exportPDF()">
             <span style="font-size:22px;">📄</span>
-            <span class="export-btn-label">PDF 报表</span>
-            <span class="export-btn-sub">适合发给客户</span>
+            <span class="export-btn-label" data-i18n="pdfLabel">PDF 报表</span>
+            <span class="export-btn-sub" data-i18n="pdfSub">适合发给客户</span>
           </button>
           <button class="export-btn" id="xlsBtn" onclick="exportExcel()">
             <span style="font-size:22px;">📊</span>
-            <span class="export-btn-label">Excel 表格</span>
-            <span class="export-btn-sub">适合数据分析</span>
+            <span class="export-btn-label" data-i18n="xlsLabel">Excel 表格</span>
+            <span class="export-btn-sub" data-i18n="xlsSub">适合数据分析</span>
           </button>
         </div>
       </div>
@@ -501,13 +499,22 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
   <div class="page" id="page-settings">
     <div style="padding:1rem 1.5rem 0;">
 
+      <!-- LANGUAGE -->
       <div style="margin-bottom:1.75rem;">
-        <p class="section-label" style="margin-bottom:12px">地理围栏提醒</p>
+        <p class="section-label" id="s-lang-label" style="margin-bottom:12px">语言 · Language</p>
+        <div style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);display:flex;overflow:hidden;">
+          <button id="langZH" onclick="setLang('zh')" style="flex:1;padding:12px;background:var(--ink);color:var(--sand);border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">中文</button>
+          <button id="langEN" onclick="setLang('en')" style="flex:1;padding:12px;background:transparent;color:var(--ink-muted);border:none;border-left:0.5px solid var(--divider);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all 0.2s;">English</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.75rem;">
+        <p class="section-label" style="margin-bottom:12px" data-i18n="geoSection">地理围栏提醒</p>
         <div style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);overflow:hidden;">
           <div style="padding:14px 16px;border-bottom:0.5px solid var(--divider);display:flex;justify-content:space-between;align-items:center;">
             <div>
-              <div style="font-size:13px;font-weight:500;color:var(--ink);">到达办公室自动提醒</div>
-              <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;">进入范围时提示开始计时</div>
+              <div style="font-size:13px;font-weight:500;color:var(--ink);" data-i18n="geoTitle">到达办公室自动提醒</div>
+              <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;" data-i18n="geoSub">进入范围时提示开始计时</div>
             </div>
             <label style="position:relative;display:inline-block;width:44px;height:26px;cursor:pointer;">
               <input type="checkbox" id="geoToggle" onchange="toggleGeo()" style="opacity:0;width:0;height:0;position:absolute;">
@@ -517,7 +524,7 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
           </div>
           <div id="geoSetupArea" style="display:none;">
             <div style="padding:14px 16px;border-bottom:0.5px solid var(--divider);">
-              <div style="font-size:12px;color:var(--ink-muted);margin-bottom:10px;">检测半径</div>
+              <div style="font-size:12px;color:var(--ink-muted);margin-bottom:10px;" data-i18n="geoRadius">检测半径</div>
               <div style="display:flex;gap:8px;">
                 <button class="radius-btn active" data-r="200" onclick="selectRadius(this)">200m</button>
                 <button class="radius-btn" data-r="500" onclick="selectRadius(this)">500m</button>
@@ -525,20 +532,18 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
               </div>
             </div>
             <div style="padding:14px 16px;">
-              <div id="geoStatus" style="font-size:12px;color:var(--ink-muted);margin-bottom:10px;">尚未设置办公室位置</div>
-              <button onclick="saveOfficeLocation()" style="padding:9px 18px;border-radius:20px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;width:100%;transition:all 0.18s;" id="saveLocBtn">
-                📍 将当前位置设为办公室
-              </button>
+              <div id="geoStatus" style="font-size:12px;color:var(--ink-muted);margin-bottom:10px;" data-i18n="geoNotSet">尚未设置办公室位置</div>
+              <button onclick="saveOfficeLocation()" style="padding:9px 18px;border-radius:20px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;width:100%;transition:all 0.18s;" id="saveLocBtn" data-i18n="saveLocBtn">📍 将当前位置设为办公室</button>
             </div>
           </div>
         </div>
       </div>
 
       <div style="margin-bottom:1.75rem;">
-        <p class="section-label" style="margin-bottom:12px">关于</p>
+        <p class="section-label" style="margin-bottom:12px" data-i18n="aboutLabel">关于</p>
         <div style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);padding:14px 16px;">
-          <div style="font-size:13px;color:var(--ink);margin-bottom:4px;">Flow 工时计时器</div>
-          <div style="font-size:11px;color:var(--ink-muted);line-height:1.7;">数据储存在本地浏览器，不上传任何服务器。<br>跨设备同步需要接入云端服务（开发中）。</div>
+          <div style="font-size:13px;color:var(--ink);margin-bottom:4px;" data-i18n="aboutTitle">Flow 工时计时器</div>
+          <div style="font-size:11px;color:var(--ink-muted);line-height:1.7;" data-i18n="aboutDesc">数据储存在本地浏览器，不上传任何服务器。<br>跨设备同步需要接入云端服务（开发中）。</div>
         </div>
       </div>
 
@@ -549,19 +554,19 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-timer" onclick="switchTab('timer')">
       <span class="tab-icon">⏱</span>
-      <span class="tab-label">计时</span>
+      <span class="tab-label" data-i18n="tabTimer">计时</span>
     </button>
     <button class="tab-btn" id="tab-history" onclick="switchTab('history')">
       <span class="tab-icon">📋</span>
-      <span class="tab-label">记录</span>
+      <span class="tab-label" data-i18n="tabHistory">记录</span>
     </button>
     <button class="tab-btn" id="tab-export" onclick="switchTab('export')">
       <span class="tab-icon">↗</span>
-      <span class="tab-label">导出</span>
+      <span class="tab-label" data-i18n="tabExport">导出</span>
     </button>
     <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">
       <span class="tab-icon">⚙</span>
-      <span class="tab-label">设置</span>
+      <span class="tab-label" data-i18n="tabSettings">设置</span>
     </button>
   </div>
 </div>
@@ -569,11 +574,11 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
 <!-- GEOFENCE REMINDER -->
 <div id="geoReminder" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;z-index:300;padding:1rem 1.25rem 0;">
   <div style="background:var(--card);border-radius:var(--radius);border:0.5px solid var(--divider);padding:16px;box-shadow:0 4px 24px rgba(0,0,0,0.12);">
-    <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:4px;">你已到达办公室附近</div>
-    <div style="font-size:12px;color:var(--ink-muted);margin-bottom:14px;" id="geoReminderSub">要开始记录工时吗？</div>
+    <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:4px;" data-i18n="geoReminderTitle">你已到达办公室附近</div>
+    <div style="font-size:12px;color:var(--ink-muted);margin-bottom:14px;" id="geoReminderSub" data-i18n="geoReminderSub">要开始记录工时吗？</div>
     <div style="display:flex;gap:8px;">
-      <button onclick="dismissGeoReminder()" style="flex:1;padding:9px;border-radius:20px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink-muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">稍后再说</button>
-      <button onclick="startFromReminder()" style="flex:2;padding:9px;border-radius:20px;border:none;background:var(--ink);color:var(--sand);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;">开始计时</button>
+      <button onclick="dismissGeoReminder()" style="flex:1;padding:9px;border-radius:20px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink-muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;"data-i18n="geoDismiss">稍后再说</button>
+      <button onclick="startFromReminder()" style="flex:2;padding:9px;border-radius:20px;border:none;background:var(--ink);color:var(--sand);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;"data-i18n="geoStart">开始计时</button>
     </div>
   </div>
 </div>
@@ -581,7 +586,7 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
 <!-- ADD PROJECT MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal">
-    <h3>新增项目</h3>
+    <h3 data-i18n="modalTitle">新增项目</h3>
     <input type="text" id="projNameInput" placeholder="项目名称，如：产品设计 · Sprint 5" maxlength="40">
     <input type="text" id="projSubInput" placeholder="备注（可选），如：UI/UX 迭代">
     <div style="position:relative;">
@@ -589,8 +594,8 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
       <input type="number" id="projRateInput" placeholder="时薪（可选），如：300" min="0" style="padding-left:26px;">
     </div>
     <div class="modal-btns">
-      <button onclick="closeModal()">取消</button>
-      <button class="btn-confirm" onclick="addProject()">添加</button>
+      <button onclick="closeModal()" data-i18n="cancel">取消</button>
+      <button class="btn-confirm" onclick="addProject()" data-i18n="add">添加</button>
     </div>
   </div>
 </div>
@@ -604,9 +609,9 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
     </div>
     <!-- header -->
     <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 8px;">
-      <button onclick="closeTimePicker()" style="background:none;border:none;font-size:14px;color:var(--ink-muted);cursor:pointer;font-family:'DM Sans',sans-serif;">取消</button>
-      <span style="font-size:14px;font-weight:500;color:var(--ink);">补录开始时间</span>
-      <button onclick="confirmTimePicker()" style="background:none;border:none;font-size:14px;color:#3a5e3a;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">确认</button>
+      <button onclick="closeTimePicker()" style="background:none;border:none;font-size:14px;color:var(--ink-muted);cursor:pointer;font-family:'DM Sans',sans-serif;" data-i18n="cancel">取消</button>
+      <span style="font-size:14px;font-weight:500;color:var(--ink);" data-i18n="pickerTitle">补录开始时间</span>
+      <button onclick="confirmTimePicker()" style="background:none;border:none;font-size:14px;color:#3a5e3a;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;"data-i18n="confirm">确认</button>
     </div>
     <!-- wheels -->
     <div style="display:flex;justify-content:center;align-items:center;gap:0;position:relative;height:216px;overflow:hidden;padding:0 40px;">
@@ -700,7 +705,7 @@ function fmtTime(ts) {
 }
 function fmtDate(ts) {
   const d = new Date(ts);
-  return (d.getMonth()+1)+'月'+d.getDate()+'日';
+  return lang==='zh' ? (d.getMonth()+1)+'月'+d.getDate()+'日' : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate();
 }
 
 function getNetWork() {
@@ -713,15 +718,15 @@ function getNetWork() {
 // ─── RENDER ──────────────────────────────────────────
 function renderSessions() {
   const list = document.getElementById('sessionList');
-  if (!sessions.length) { list.innerHTML='<div class="empty-hint">暂无记录</div>'; return; }
+  if (!sessions.length) { list.innerHTML=`<div class="empty-hint">${t('noRecords')}</div>`; return; }
   list.innerHTML = sessions.map(s => {
     const isWork = s.type==='work';
-    const dur = s.end ? fmtShort(s.end-s.start) : '进行中';
+    const dur = s.end ? fmtShort(s.end-s.start) : t('inProgress');
     const endStr = s.end ? fmtTime(s.end) : '—';
     return `<div class="session-item">
       <span class="s-dot ${isWork?'work':'brk'}"></span>
       <div class="s-body">
-        <div class="s-name">${isWork ? '工作中' : '休息'}</div>
+        <div class="s-name">${isWork ? t('sessionWork') : t('sessionBreak')}</div>
         <div class="s-time">${fmtTime(s.start)} → ${endStr}</div>
       </div>
       <span class="s-dur">${dur}</span>
@@ -732,7 +737,7 @@ function renderSessions() {
 function renderHistory() {
   const h = loadHistory();
   const el = document.getElementById('historyList');
-  if (!h.length) { el.innerHTML='<div class="empty-hint">暂无历史记录</div>'; return; }
+  if (!h.length) { el.innerHTML=`<div class="empty-hint">${t('noHistory')}</div>`; return; }
   el.innerHTML = h.map((item, i) => `
     <div class="history-item">
       <div class="h-left">
@@ -785,27 +790,27 @@ function applyState() {
   ring.className = 'ring' + (state===S.RUNNING?' running':state===S.BREAK?' on-break':'');
 
   if (state === S.IDLE) {
-    setStatus('', '待开始');
-    setBtns('<button class="btn primary" onclick="startWork()">开始工作</button>');
-    document.getElementById('timerLabel').textContent = '净工时';
+    setStatus('', t('statusIdle'));
+    setBtns(`<button class="btn primary" onclick="startWork()">${t('btnStart')}</button>`);
+    document.getElementById('timerLabel').textContent = t('netHours');
   } else if (state === S.RUNNING) {
-    setStatus('running', '计时中');
+    setStatus('running', t('statusRunning'));
     setBtns(`
-      <button class="btn break-btn" onclick="goBreak()">☕ 休息一下</button>
-      <button class="btn" onclick="endWork()">结束工作</button>
+      <button class="btn break-btn" onclick="goBreak()">${t('btnBreak')}</button>
+      <button class="btn" onclick="endWork()">${t('btnEnd')}</button>
     `);
-    document.getElementById('timerLabel').textContent = '净工时';
+    document.getElementById('timerLabel').textContent = t('netHours');
   } else if (state === S.BREAK) {
-    setStatus('on-break', '休息中');
+    setStatus('on-break', t('statusBreak'));
     setBtns(`
-      <button class="btn resume-btn" onclick="resumeWork()">返回工位</button>
-      <button class="btn" onclick="endWork()">结束工作</button>
+      <button class="btn resume-btn" onclick="resumeWork()">${t('btnResume')}</button>
+      <button class="btn" onclick="endWork()">${t('btnEnd')}</button>
     `);
-    document.getElementById('timerLabel').textContent = '休息中';
+    document.getElementById('timerLabel').textContent = t('onBreak');
   } else if (state === S.DONE) {
-    setStatus('', '已结束');
-    setBtns('<button class="btn primary" onclick="resetAll()">新建记录</button>');
-    document.getElementById('timerLabel').textContent = '净工时';
+    setStatus('', t('statusDone'));
+    setBtns(`<button class="btn primary" onclick="resetAll()">${t('btnNew')}</button>`);
+    document.getElementById('timerLabel').textContent = t('netHours');
   }
 
   const net = getNetWork();
@@ -822,7 +827,7 @@ function tick() {
     document.getElementById('totalVal').textContent = fmtDuration(net);
   } else if (state === S.BREAK) {
     const bd = Date.now() - breakStartTs;
-    document.getElementById('breakDurText').textContent = '已暂停 '+fmtDuration(bd);
+    document.getElementById('breakDurText').textContent = t('paused')+' '+fmtDuration(bd);
   }
 }
 
@@ -979,13 +984,13 @@ function endWork() {
   document.getElementById('finishedTime').textContent = fmtDuration(net);
   const wSegs = sessions.filter(s=>s.type==='work').length;
   const bSegs = sessions.filter(s=>s.type==='break').length;
-  document.getElementById('finishedSub').textContent = `共 ${wSegs} 段工作 · ${bSegs} 次休息`;
+  document.getElementById('finishedSub').textContent = lang==='zh' ? `共 ${wSegs} 段工作 · ${bSegs} 次休息` : `${wSegs} work segment${wSegs>1?'s':''} · ${bSegs} break${bSegs>1?'s':''}`;
   document.getElementById('totalVal').textContent = fmtDuration(net);
 
   const projects = loadProjects();
   const selIdx = parseInt(document.getElementById('projectSelect').value) || 0;
   const proj = projects[selIdx] || {};
-  const projName = proj.name || '未命名项目';
+  const projName = proj.name || (lang==='zh' ? '未命名项目' : 'Unnamed Project');
   const rate = proj.rate || 0;
   saveHistory({ project: projName, dateStr: fmtDate(Date.now()), duration: fmtDuration(net), ms: net, ts: Date.now(), rate });
 
@@ -1065,13 +1070,13 @@ function renderGeoSettings() {
 
   const status = document.getElementById('geoStatus');
   if (prefs.lat && prefs.lng) {
-    status.textContent = `办公室已设置 · 半径 ${geoRadius}m`;
+    status.textContent = lang==='zh' ? `办公室已设置 · 半径 ${geoRadius}m` : `Office set · Radius ${geoRadius}m`;
     status.style.color = 'var(--pulse)';
-    document.getElementById('saveLocBtn').textContent = '📍 更新办公室位置';
+    document.getElementById('saveLocBtn').textContent = t('updateLocBtn');
   } else {
-    status.textContent = '尚未设置办公室位置';
+    status.textContent = t('geoNotSet');
     status.style.color = 'var(--ink-muted)';
-    document.getElementById('saveLocBtn').textContent = '📍 将当前位置设为办公室';
+    document.getElementById('saveLocBtn').textContent = t('saveLocBtn');
   }
 }
 
@@ -1105,10 +1110,10 @@ function selectRadius(btn) {
 
 function saveOfficeLocation() {
   const btn = document.getElementById('saveLocBtn');
-  btn.textContent = '定位中...';
+  btn.textContent = t('geoLocating');
   if (!navigator.geolocation) {
-    alert('此浏览器不支持定位');
-    btn.textContent = '📍 将当前位置设为办公室';
+    alert(t('geoUnsupported'));
+    btn.textContent = t('saveLocBtn');
     return;
   }
   navigator.geolocation.getCurrentPosition(pos => {
@@ -1118,8 +1123,8 @@ function saveOfficeLocation() {
     saveGeoPrefs(prefs);
     renderGeoSettings();
   }, () => {
-    alert('定位失败，请检查浏览器权限');
-    btn.textContent = '📍 将当前位置设为办公室';
+    alert(t('geoFail'));
+    btn.textContent = t('saveLocBtn');
   });
 }
 
@@ -1144,7 +1149,7 @@ function startGeoWatch() {
     if (dist <= radius) {
       geoReminderShown = true;
       const distStr = Math.round(dist) + 'm';
-      document.getElementById('geoReminderSub').textContent = `距离办公室 ${distStr}，要开始记录工时吗？`;
+      document.getElementById('geoReminderSub').textContent = lang==='zh' ? `距离办公室 ${distStr}，要开始记录工时吗？` : `You're ${distStr} from the office. Start tracking?`;
       document.getElementById('geoReminder').style.display = 'block';
     }
   }, null, { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 });
@@ -1195,17 +1200,15 @@ function msToHours(ms) { return (ms / 3600000).toFixed(1); }
 
 function renderExportPreview() {
   const items = getFilteredHistory();
-  const labels = { today:'今天', week:'本周', month:'本月', all:'全部记录' };
   const now = new Date();
-
-  document.getElementById('previewTitle').textContent = labels[currentRange] + '工时报告';
-  document.getElementById('previewPeriod').textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日 导出';
+  document.getElementById('previewTitle').textContent = ranges()[currentRange] + (lang==='zh' ? '工时报告' : ' Report');
+  document.getElementById('previewPeriod').textContent = lang==='zh' ? now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 导出' : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
 
   if (!items.length) {
     document.getElementById('prevTotal').textContent = '—';
     document.getElementById('prevDays').textContent = '—';
     document.getElementById('prevAvg').textContent = '—';
-    document.getElementById('previewRows').innerHTML = '<div class="empty-hint" style="padding:1.5rem">暂无记录</div>';
+    document.getElementById('previewRows').innerHTML = `<div class="empty-hint" style="padding:1.5rem">${t('noRecords')}</div>`;
     return;
   }
 
@@ -1216,9 +1219,9 @@ function renderExportPreview() {
   const hasRate = items.some(i => i.rate > 0);
 
   document.getElementById('prevTotal').textContent = msToHours(totalMs) + 'h';
-  document.getElementById('prevDays').textContent = days + '天';
+  document.getElementById('prevDays').textContent = lang==='zh' ? days+'天' : days+(days===1?' day':' days');
   document.getElementById('prevAvg').textContent = msToHours(avg) + 'h';
-  document.getElementById('prevAmount').textContent = hasRate ? '$' + Math.round(totalAmount).toLocaleString() : '未设置时薪';
+  document.getElementById('prevAmount').textContent = hasRate ? '$' + Math.round(totalAmount).toLocaleString() : t('noRateSet');
 
   document.getElementById('previewRows').innerHTML = items.map(item => {
     const amt = item.rate ? '$' + Math.round((item.ms/3600000) * item.rate) : '';
@@ -1236,126 +1239,95 @@ function renderExportPreview() {
   }).join('');
 }
 
-function setExportBtnLoading(id, loading) {
-  const btn = document.getElementById(id);
-  if (!btn) return;
-  btn.disabled = loading;
-  btn.style.opacity = loading ? '0.5' : '1';
-}
-
-function loadScript(src) {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
-    const s = document.createElement('script');
-    s.src = src; s.onload = resolve; s.onerror = reject;
-    document.head.appendChild(s);
-  });
-}
-
 async function exportPDF() {
   const items = getFilteredHistory();
-  if (!items.length) { alert('暂无记录可导出'); return; }
-  setExportBtnLoading('pdfBtn', true);
-  try {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-  } catch(e) { alert('库加载失败，请检查网络连接'); setExportBtnLoading('pdfBtn', false); return; }
+  if (!items.length) { alert(t('noExportData')); return; }
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-  const W = 210, margin = 18;
-  let y = 0;
-
-  doc.setFillColor(245, 242, 237);
-  doc.rect(0, 0, W, 28, 'F');
-  doc.setFontSize(8); doc.setTextColor(122, 114, 105);
-  doc.text('FLOW · 工时报告', margin, 10);
   const now = new Date();
-  doc.text(now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日', W-margin, 10, {align:'right'});
-
-  doc.setFontSize(16); doc.setTextColor(44, 39, 32); doc.setFont(undefined,'bold');
   const labels = { today:'今天', week:'本周', month:'本月', all:'全部记录' };
-  doc.text(labels[currentRange]+'工时报告', margin, 21);
-  y = 38;
-
-  // Stats
   const totalMs = items.reduce((a,b)=>a+(b.ms||0),0);
   const days = new Set(items.map(i=>i.dateStr)).size;
   const avg = days>0 ? totalMs/days : 0;
   const totalAmount = items.reduce((a,b)=>a+(b.rate?(b.ms/3600000)*b.rate:0),0);
   const hasRate = items.some(i=>i.rate>0);
-  const stats = [
-    ['总工时', msToHours(totalMs)+'h'],
-    ['记录天数', days+'天'],
-    ['日均工时', msToHours(avg)+'h'],
-    ['应收金额', hasRate ? '$'+Math.round(totalAmount).toLocaleString() : '—'],
-  ];
-  const cardW = (W - margin*2 - 12) / 4;
-  stats.forEach((s, i) => {
-    const cx = margin + i*(cardW+4);
-    doc.setFillColor(245,242,237); doc.roundedRect(cx, y, cardW, 16, 2, 2, 'F');
-    doc.setFontSize(7); doc.setTextColor(122,114,105); doc.setFont(undefined,'normal');
-    doc.text(s[0], cx+4, y+6);
-    doc.setFontSize(i===3?10:12);
-    doc.setTextColor(i===3?107:44, i===3?143:39, i===3?107:32); doc.setFont(undefined,'bold');
-    doc.text(s[1], cx+4, y+13);
-  });
-  y += 24;
 
-  // Table header
-  doc.setFillColor(232,227,218);
-  doc.rect(margin, y, W-margin*2, 7, 'F');
-  doc.setFontSize(7); doc.setTextColor(122,114,105); doc.setFont(undefined,'normal');
-  doc.text('项目', margin+3, y+5);
-  doc.text('日期', margin+80, y+5);
-  doc.text('工时', margin+120, y+5);
-  if (hasRate) doc.text('应收', W-margin-3, y+5, {align:'right'});
-  y += 10;
+  const rows = items.map((item,i) => {
+    const amt = item.rate ? '$'+Math.round((item.ms/3600000)*item.rate).toLocaleString() : '—';
+    return `<tr style="background:${i%2===0?'#fafaf8':'#fff'}">
+      <td>${item.project}</td>
+      <td>${item.dateStr}</td>
+      <td style="font-family:monospace">${item.duration}</td>
+      ${hasRate ? `<td style="color:#3d6b3d;font-weight:500">${amt}</td>` : ''}
+    </tr>`;
+  }).join('');
 
-  // Rows
-  items.forEach((item, i) => {
-    if (y > 270) { doc.addPage(); y = 20; }
-    if (i%2===0) { doc.setFillColor(250,250,248); doc.rect(margin,y-4,W-margin*2,8,'F'); }
-    doc.setFontSize(8.5); doc.setTextColor(44,39,32); doc.setFont(undefined,'normal');
-    doc.text(item.project.substring(0,28), margin+3, y+1);
-    doc.text(item.dateStr, margin+80, y+1);
-    doc.setFont(undefined,'bold');
-    doc.text(item.duration, margin+120, y+1);
-    if (hasRate && item.rate) {
-      doc.setTextColor(107,143,107);
-      doc.text('$'+Math.round((item.ms/3600000)*item.rate).toLocaleString(), W-margin-3, y+1, {align:'right'});
-      doc.setTextColor(44,39,32);
-    }
-    y += 9;
-  });
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${t('reportTitle')}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; color:#2C2720; background:#fff; padding:12mm 14mm; }
+    .header { background:#F5F2ED; padding:12px 16px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:flex-end; }
+    .header h1 { font-size:20px; font-weight:500; }
+    .header p { font-size:11px; color:#7A7269; }
+    .stats { display:grid; grid-template-columns:repeat(${hasRate?4:3},1fr); gap:10px; margin-bottom:20px; }
+    .stat { background:#F5F2ED; border-radius:6px; padding:10px 12px; }
+    .stat label { font-size:10px; color:#7A7269; display:block; margin-bottom:4px; }
+    .stat span { font-size:16px; font-weight:500; font-family:'DM Mono',monospace; }
+    .stat.amount span { color:#3d6b3d; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    thead tr { background:#E8E3DA; }
+    th { padding:8px 10px; text-align:left; font-weight:500; font-size:11px; color:#7A7269; }
+    td { padding:8px 10px; border-bottom:0.5px solid #E0DBD3; }
+    .total-row td { background:#E8E3DA; font-weight:500; }
+    .footer { margin-top:20px; padding-top:10px; border-top:0.5px solid #E0DBD3; display:flex; justify-content:space-between; font-size:10px; color:#7A7269; }
+    @media print { body { padding:8mm 10mm; } }
+  </style></head><body>
+  <div class="header">
+    <div><p style="font-size:10px;color:#7A7269;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px">${t('reportHeader')}</p><h1>${ranges()[currentRange]} ${lang==='zh'?'工时报告':'Report'}</h1></div>
+    <p>${lang==='zh'?now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日':['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]+' '+now.getDate()+', '+now.getFullYear()}</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><label>${t('statTotal')}</label><span>${msToHours(totalMs)}h</span></div>
+    <div class="stat"><label>${t('statDays')}</label><span>${lang==='zh'?days+'天':days+(days===1?' day':' days')}</span></div>
+    <div class="stat"><label>${t('statAvg')}</label><span>${msToHours(avg)}h</span></div>
+    ${hasRate ? `<div class="stat amount"><label>${t('statAmount')}</label><span>$${Math.round(totalAmount).toLocaleString()}</span></div>` : ''}
+  </div>
+  <table>
+    <thead><tr>
+      <th>${t('colProject')}</th><th>${t('colDate')}</th><th>${t('colDuration')}</th>
+      ${hasRate ? `<th>${t('statAmount')}</th>` : ''}
+    </tr></thead>
+    <tbody>${rows}</tbody>
+    ${hasRate ? `<tfoot><tr class="total-row"><td>${t('total')}</td><td></td><td style="font-family:monospace">${msToHours(totalMs)}h</td><td style="color:#3d6b3d">$${Math.round(totalAmount).toLocaleString()}</td></tr></tfoot>` : ''}
+  </table>
+  <div class="footer"><span>${t('reportGenerated')}</span><span>gracieory.github.io/FLOW/</span></div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
 
-  // Total row
-  if (hasRate) {
-    doc.setFillColor(232,227,218); doc.rect(margin, y, W-margin*2, 8, 'F');
-    doc.setFontSize(8.5); doc.setTextColor(44,39,32); doc.setFont(undefined,'bold');
-    doc.text('合计', margin+3, y+5.5);
-    doc.text(msToHours(totalMs)+'h', margin+120, y+5.5);
-    doc.setTextColor(107,143,107);
-    doc.text('$'+Math.round(totalAmount).toLocaleString(), W-margin-3, y+5.5, {align:'right'});
-    y += 12;
-  }
-
-  doc.setDrawColor(224,219,211); doc.setLineWidth(0.3);
-  doc.line(margin, 282, W-margin, 282);
-  doc.setFontSize(7); doc.setTextColor(122,114,105); doc.setFont(undefined,'normal');
-  doc.text('由 Flow 自动生成', margin, 287);
-  doc.text('第 1 页', W-margin, 287, {align:'right'});
-
-  doc.save('Flow工时报告_'+now.getFullYear()+(now.getMonth()+1)+now.getDate()+'.pdf');
-  setExportBtnLoading('pdfBtn', false);
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 async function exportExcel() {
   const items = getFilteredHistory();
-  if (!items.length) { alert('暂无记录可导出'); return; }
-  setExportBtnLoading('xlsBtn', true);
+  if (!items.length) { alert(t('noExportData')); return; }
+  const btn = document.getElementById('xlsBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
   try {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
-  } catch(e) { alert('库加载失败，请检查网络连接'); setExportBtnLoading('xlsBtn', false); return; }
+    await new Promise((resolve, reject) => {
+      if (window.XLSX) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  } catch(e) {
+    alert(lang==='zh'?'库加载失败，请检查网络':'Failed to load library. Check network.');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    return;
+  }
 
   const XLSX = window.XLSX;
   const wb = XLSX.utils.book_new();
@@ -1366,22 +1338,22 @@ async function exportExcel() {
   const totalAmount = items.reduce((a,b)=>a+(b.rate?(b.ms/3600000)*b.rate:0),0);
   const hasRate = items.some(i=>i.rate>0);
   const summaryData = [
-    ['Flow 工时报告'],
+    [t('reportTitle')],
     [],
-    ['导出时间', new Date().toLocaleString('zh-CN')],
-    ['统计范围', { today:'今天', week:'本周', month:'本月', all:'全部记录' }[currentRange]],
-    ['总工时', msToHours(totalMs)+'h'],
-    ['记录天数', days+'天'],
-    ['日均工时', days>0 ? msToHours(totalMs/days)+'h' : '—'],
-    ...(hasRate ? [['应收金额', '$'+Math.round(totalAmount).toLocaleString()]] : []),
+    [t('exportTime'), new Date().toLocaleString()],
+    [t('exportRange2'), ranges()[currentRange]],
+    [t('statTotal'), msToHours(totalMs)+'h'],
+    [t('statDays'), days+(lang==='zh'?'天':' days')],
+    [t('statAvg'), msToHours(totalMs/days)+'h'],
+    ...(hasRate ? [[t('statAmount'), '$'+Math.round(totalAmount).toLocaleString()]] : []),
   ];
   const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
   ws1['!cols'] = [{wch:16},{wch:24}];
-  XLSX.utils.book_append_sheet(wb, ws1, '摘要');
+  XLSX.utils.book_append_sheet(wb, ws1, t('summarySheet'));
 
   // Detail sheet
-  const detailHeaders = ['项目名称','日期','工时(h:m:s)','工时(小时)'];
-  if (hasRate) detailHeaders.push('时薪($/h)', '应收金额($)');
+  const detailHeaders = [t('colProject'),t('colDate'),t('colDuration'),t('colHours')];
+  if (hasRate) detailHeaders.push(t('colRate'), t('colAmount'));
   const detailData = [detailHeaders];
   items.forEach(item => {
     const row = [item.project, item.dateStr, item.duration, parseFloat(msToHours(item.ms||0))];
@@ -1393,48 +1365,174 @@ async function exportExcel() {
   });
   // Total row
   if (hasRate) {
-    detailData.push(['合计', '', '', parseFloat(msToHours(totalMs)), '', Math.round(totalAmount)]);
+    detailData.push([t('total'), '', '', parseFloat(msToHours(totalMs)), '', Math.round(totalAmount)]);
   }
   const ws2 = XLSX.utils.aoa_to_sheet(detailData);
   ws2['!cols'] = [{wch:30},{wch:12},{wch:14},{wch:10},{wch:12},{wch:14}];
-  XLSX.utils.book_append_sheet(wb, ws2, '明细');
+  XLSX.utils.book_append_sheet(wb, ws2, t('detailSheet'));
 
   const now = new Date();
-  XLSX.writeFile(wb, 'Flow工时_'+now.getFullYear()+(now.getMonth()+1)+now.getDate()+'.xlsx');
-  setExportBtnLoading('xlsBtn', false);
+  XLSX.writeFile(wb, 'Flow_Hours_'+now.getFullYear()+(now.getMonth()+1)+now.getDate()+'.xlsx');
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+}
+
+// ─── I18N ─────────────────────────────────────────────
+const STRINGS = {
+  zh: {
+    title: 'Flow · 工时计时器',
+    statusIdle: '待开始', statusRunning: '计时中', statusBreak: '休息中', statusDone: '已结束',
+    netHours: '净工时', onBreak: '休息中',
+    startHint: '点击开始后切换 App 也会持续计时',
+    backfillBtn: '忘记打卡？补录开始时间',
+    startedAt: '实际开始于',
+    btnStart: '开始工作', btnBreak: '☕ 休息一下', btnResume: '返回工位', btnEnd: '结束工作', btnNew: '新建记录',
+    workDone: '今日工作已结束 ✓', hoursRecorded: '净工时已记录',
+    todayTimeline: '今日时间线', noRecords: '暂无记录', todayNet: '今日净工时',
+    sessionWork: '工作中', sessionBreak: '休息', inProgress: '进行中',
+    paused: '已暂停',
+    historyLabel: '历史记录', noHistory: '暂无历史记录',
+    exportRange: '导出范围', rangeToday: '今天', rangeWeek: '本周', rangeMonth: '本月', rangeAll: '全部',
+    previewLabel: '报表预览', reportHeader: 'FLOW · 工时报告', previewLoading: '加载中...',
+    statTotal: '总工时', statDays: '记录天数', statAvg: '平均/天', statAmount: '应收金额',
+    noRateSet: '未设置时薪', noExportData: '暂无记录可导出',
+    exportFormat: '导出格式', pdfLabel: 'PDF 报表', pdfSub: '适合发给客户', xlsLabel: 'Excel 表格', xlsSub: '适合数据分析',
+    geoSection: '地理围栏提醒', geoTitle: '到达办公室自动提醒', geoSub: '进入范围时提示开始计时',
+    geoRadius: '检测半径', geoNotSet: '尚未设置办公室位置', geoSet: '办公室已设置', geoLocating: '定位中...',
+    saveLocBtn: '📍 将当前位置设为办公室', updateLocBtn: '📍 更新办公室位置',
+    geoFail: '定位失败，请检查浏览器权限', geoUnsupported: '此浏览器不支持定位',
+    geoReminderTitle: '你已到达办公室附近', geoReminderSub: '要开始记录工时吗？',
+    geoDismiss: '稍后再说', geoStart: '开始计时',
+    aboutLabel: '关于', aboutTitle: 'Flow 工时计时器',
+    aboutDesc: '数据储存在本地浏览器，不上传任何服务器。<br>跨设备同步需要接入云端服务（开发中）。',
+    tabTimer: '计时', tabHistory: '记录', tabExport: '导出', tabSettings: '设置',
+    modalTitle: '新增项目', projNamePH: '项目名称，如：产品设计 · Sprint 5',
+    projSubPH: '备注（可选），如：UI/UX 迭代', projRatePH: '时薪（可选），如：300',
+    cancel: '取消', add: '添加',
+    pickerTitle: '补录开始时间', confirm: '确认',
+    reportTitle: '工时报告', reportGenerated: '由 Flow 自动生成',
+    summarySheet: '摘要', detailSheet: '明细',
+    exportTime: '导出时间', exportRange2: '统计范围',
+    colProject: '项目名称', colDate: '日期', colDuration: '工时(h:m:s)', colHours: '工时(小时)', colRate: '时薪($/h)', colAmount: '应收金额($)',
+    total: '合计', days: '天', perDay: '平均/天',
+    weeks: ['周日','周一','周二','周三','周四','周五','周六'],
+    ranges: { today:'今天', week:'本周', month:'本月', all:'全部记录' },
+  },
+  en: {
+    title: 'Flow · Time Tracker',
+    statusIdle: 'Ready', statusRunning: 'Tracking', statusBreak: 'On Break', statusDone: 'Done',
+    netHours: 'Net Hours', onBreak: 'On Break',
+    startHint: 'Timer keeps running even when you switch apps',
+    backfillBtn: 'Forgot to clock in? Set start time',
+    startedAt: 'Started at',
+    btnStart: 'Start', btnBreak: '☕ Take a Break', btnResume: 'Back to Work', btnEnd: 'End Session', btnNew: 'New Session',
+    workDone: "Today's session ended ✓", hoursRecorded: 'Net hours recorded',
+    todayTimeline: "Today's Timeline", noRecords: 'No records yet', todayNet: 'Net Hours Today',
+    sessionWork: 'Working', sessionBreak: 'Break', inProgress: 'In progress',
+    paused: 'Paused',
+    historyLabel: 'History', noHistory: 'No history yet',
+    exportRange: 'Date Range', rangeToday: 'Today', rangeWeek: 'This Week', rangeMonth: 'This Month', rangeAll: 'All Time',
+    previewLabel: 'Preview', reportHeader: 'FLOW · TIME REPORT', previewLoading: 'Loading...',
+    statTotal: 'Total Hours', statDays: 'Days', statAvg: 'Avg/Day', statAmount: 'Billable',
+    noRateSet: 'No rate set', noExportData: 'No records to export',
+    exportFormat: 'Export Format', pdfLabel: 'PDF Report', pdfSub: 'Great for clients', xlsLabel: 'Excel Sheet', xlsSub: 'Great for analysis',
+    geoSection: 'Geofence Reminder', geoTitle: 'Auto-remind at office', geoSub: 'Prompt to start when you arrive',
+    geoRadius: 'Detection Radius', geoNotSet: 'Office location not set', geoSet: 'Office set', geoLocating: 'Locating...',
+    saveLocBtn: '📍 Set current location as office', updateLocBtn: '📍 Update office location',
+    geoFail: 'Location failed. Check browser permissions.', geoUnsupported: 'Geolocation not supported',
+    geoReminderTitle: "You're near the office", geoReminderSub: 'Want to start tracking?',
+    geoDismiss: 'Later', geoStart: 'Start Tracking',
+    aboutLabel: 'About', aboutTitle: 'Flow Time Tracker',
+    aboutDesc: 'Data stored locally. Nothing is uploaded.<br>Cross-device sync coming soon.',
+    tabTimer: 'Timer', tabHistory: 'History', tabExport: 'Export', tabSettings: 'Settings',
+    modalTitle: 'New Project', projNamePH: 'Project name, e.g. Product Design · Sprint 5',
+    projSubPH: 'Note (optional), e.g. UI/UX iteration', projRatePH: 'Hourly rate (optional), e.g. 120',
+    cancel: 'Cancel', add: 'Add',
+    pickerTitle: 'Set Start Time', confirm: 'Confirm',
+    reportTitle: 'Time Report', reportGenerated: 'Generated by Flow',
+    summarySheet: 'Summary', detailSheet: 'Details',
+    exportTime: 'Export time', exportRange2: 'Range',
+    colProject: 'Project', colDate: 'Date', colDuration: 'Duration', colHours: 'Hours', colRate: 'Rate ($/h)', colAmount: 'Amount ($)',
+    total: 'Total', days: ' days', perDay: 'avg/day',
+    weeks: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    ranges: { today:'Today', week:'This Week', month:'This Month', all:'All Time' },
+  }
+};
+
+let lang = localStorage.getItem('flow_lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
+
+function t(key) { return STRINGS[lang][key] || STRINGS['zh'][key] || key; }
+function ranges() { return STRINGS[lang].ranges; }
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('flow_lang', l);
+  applyLang();
+}
+
+function applyLang() {
+  document.title = t('title');
+  document.getElementById('langZH').style.background = lang==='zh' ? 'var(--ink)' : 'transparent';
+  document.getElementById('langZH').style.color = lang==='zh' ? 'var(--sand)' : 'var(--ink-muted)';
+  document.getElementById('langEN').style.background = lang==='en' ? 'var(--ink)' : 'transparent';
+  document.getElementById('langEN').style.color = lang==='en' ? 'var(--sand)' : 'var(--ink-muted)';
+
+  const map = {
+    startHint: 'startHint', backfillBtn: 'backfillBtn',
+    timerLabel: 'netHours', todayNet: 'todayNet',
+    'tab-timer-label': 'tabTimer', 'tab-history-label': 'tabHistory',
+    'tab-export-label': 'tabExport', 'tab-settings-label': 'tabSettings',
+  };
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (STRINGS[lang][key] !== undefined) {
+      if (el.tagName === 'INPUT') el.placeholder = t(key);
+      else el.innerHTML = t(key);
+    }
+  });
+
+  // Placeholders
+  document.getElementById('projNameInput').placeholder = t('projNamePH');
+  document.getElementById('projSubInput').placeholder = t('projSubPH');
+  document.getElementById('projRateInput').placeholder = t('projRatePH');
+
+  const np = document.getElementById('newProjBtn');
+  if (np) np.title = t('modalTitle');
+
+  updateDateLine();
+  applyState();
+  renderGeoSettings();
+  renderExportPreview();
+}
+
+function updateDateLine() {
+  const d = new Date();
+  const weeks = t('weeks');
+  if (lang === 'zh') {
+    document.getElementById('dateLine').textContent = `${d.getMonth()+1}月${d.getDate()}日 ${weeks[d.getDay()]}`;  // zh branch
+  } else {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('dateLine').textContent = `${weeks[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+  }
 }
 
 // ─── INIT ─────────────────────────────────────────────
 document.getElementById('projNameInput').addEventListener('keydown', e => { if (e.key==='Enter') addProject(); });
 
-// Date display
-(function() {
-  const days = ['周日','周一','周二','周三','周四','周五','周六'];
-  const d = new Date();
-  const month = d.getMonth() + 1;
-  const date = d.getDate();
-  const day = days[d.getDay()];
-  document.getElementById('dateLine').textContent = `${month}月${date}日 ${day}`;
-})();
-
 load();
 renderProjects();
-applyState();
+applyLang();
 
 if (state === S.RUNNING || state === S.BREAK) {
   clearInterval(tickInterval);
   tickInterval = setInterval(tick, 1000);
 }
 
-// Auto-start geofence if previously enabled
 const _geoPrefs = loadGeoPrefs();
 if (_geoPrefs.enabled && _geoPrefs.lat) startGeoWatch();
 
-// Page visibility: when user comes back from another tab
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && (state === S.RUNNING || state === S.BREAK)) {
-    tick();
-  }
+  if (!document.hidden && (state === S.RUNNING || state === S.BREAK)) tick();
 });
 
 if ('serviceWorker' in navigator) {
