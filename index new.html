@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Flow · Time Tracker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2C2720">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flow">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --ink: #2C2720;
+  --ink-muted: #7A7269;
+  --sand: #F5F2ED;
+  --sand-dark: #E8E3DA;
+  --divider: #E0DBD3;
+  --accent: #8B7355;
+  --pulse: #6B8F6B;
+  --amber: #C49A3C;
+  --blue: #5B87C5;
+  --bg: #FAFAF8;
+  --card: #FFFFFF;
+  --radius: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #F0EDE8;
+    --ink-muted: #9A9187;
+    --sand: #2A2620;
+    --sand-dark: #333028;
+    --divider: #3A3630;
+    --bg: #1C1A17;
+    --card: #242118;
+  }
+}
+
+html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--ink); }
+
+.app {
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding: 0 0 5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TOP BAR */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem 0;
+  margin-bottom: 1.75rem;
+}
+.top-left { display: flex; flex-direction: column; gap: 3px; }
+.app-name { font-size: 11px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-muted); }
+.date-line { font-size: 13px; font-weight: 400; color: var(--ink); letter-spacing: 0.01em; }
+.weekday-tag { font-size: 11px; color: var(--ink-muted); }
+.status-pill {
+  font-size: 11px; padding: 4px 12px; border-radius: 20px;
+  border: 0.5px solid var(--divider); color: var(--ink-muted);
+  display: flex; align-items: center; gap: 6px; transition: all 0.3s;
+  background: var(--card);
+}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-muted); transition: background 0.3s; }
+.status-pill.running .status-dot { background: var(--pulse); animation: blink 1.4s ease-in-out infinite; }
+.status-pill.on-break .status-dot { background: var(--amber); }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+/* PROJECT SELECTOR */
+.project-bar {
+  margin: 0 1.5rem 1.5rem;
+  display: flex; gap: 8px; align-items: center;
+}
+.project-select {
+  flex: 1; padding: 9px 14px;
+  border-radius: var(--radius); border: 0.5px solid var(--divider);
+  background: var(--card); color: var(--ink);
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  appearance: none; cursor: pointer;
+}
+.project-select:focus { outline: none; border-color: var(--accent); }
+.btn-new-proj {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 0.5px solid var(--divider); background: var(--card);
+  color: var(--ink-muted); cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s; flex-shrink: 0;
+}
+.btn-new-proj:hover { background: var(--sand); }
+
+/* ADD PROJECT MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: none; align-items: center; justify-content: center; z-index: 100;
+  padding: 1rem;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--card); border-radius: var(--radius);
+  padding: 1.5rem; width: 100%; max-width: 320px;
+  border: 0.5px solid var(--divider);
+}
+.modal h3 { font-size: 14px; font-weight: 500; margin-bottom: 1rem; }
+.modal input {
+  width: 100%; padding: 9px 12px;
+  border: 0.5px solid var(--divider); border-radius: 10px;
+  background: var(--sand); color: var(--ink);
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  margin-bottom: 8px;
+}
+.modal input:focus { outline: none; border-color: var(--accent); }
+.modal-btns { display: flex; gap: 8px; margin-top: 4px; }
+.modal-btns button {
+  flex: 1; padding: 9px; border-radius: 10px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.18s; border: 0.5px solid var(--divider);
+  background: var(--sand); color: var(--ink);
+}
+.modal-btns .btn-confirm { background: var(--ink); color: var(--sand); border-color: var(--ink); }
+
+/* RING */
+.ring-wrap { display: flex; justify-content: center; margin-bottom: 1.25rem; }
+.ring {
+  width: 200px; height: 200px; border-radius: 50%;
+  border: 1.5px solid var(--divider);
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color 0.4s; position: relative;
+}
+.ring.running { border-color: var(--pulse); animation: breathe 3s ease-in-out infinite; }
+.ring.on-break { border-color: var(--amber); }
+@keyframes breathe {
+  0%,100%{ box-shadow: 0 0 0 0 rgba(107,143,107,0); }
+  50%{ box-shadow: 0 0 0 16px rgba(107,143,107,0.08); }
+}
+.ring-inner {
+  width: 164px; height: 164px; border-radius: 50%;
+  background: var(--sand); border: 0.5px solid var(--divider);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 5px; transition: background 0.4s;
+}
+.ring.running .ring-inner { background: rgba(107,143,107,0.06); }
+.ring.on-break .ring-inner { background: rgba(196,154,60,0.06); }
+.time-main {
+  font-family: 'DM Mono', monospace; font-size: 32px;
+  font-weight: 300; color: var(--ink); letter-spacing: -0.02em;
+}
+.time-label {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-muted); transition: color 0.3s;
+}
+.ring.running .time-label { color: var(--pulse); }
+.ring.on-break .time-label { color: var(--amber); }
+
+/* PROJECT INFO */
+.project-info { text-align: center; margin-bottom: 0.5rem; }
+.project-name-display { font-size: 15px; font-weight: 500; color: var(--ink); }
+.start-hint {
+  text-align: center; font-size: 12px; color: var(--ink-muted);
+  padding: 0.75rem 2rem; line-height: 1.6; font-style: italic;
+}
+
+/* BUTTONS */
+.btn-row { display: flex; gap: 9px; justify-content: center; padding: 0 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.btn {
+  padding: 10px 22px; border-radius: 24px;
+  border: 0.5px solid var(--divider); background: var(--card);
+  color: var(--ink); font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: all 0.18s; white-space: nowrap;
+}
+.btn:hover { background: var(--sand); }
+.btn:active { transform: scale(0.96); }
+.btn.primary { background: var(--ink); color: var(--sand); border-color: var(--ink); }
+.btn.primary:hover { opacity: 0.86; }
+.btn.break-btn { border-color: rgba(196,154,60,0.5); color: #7a5e1a; }
+.btn.break-btn:hover { background: rgba(196,154,60,0.07); }
+.btn.resume-btn { border-color: rgba(107,143,107,0.5); color: #3a5e3a; }
+.btn.resume-btn:hover { background: rgba(107,143,107,0.07); }
+
+/* WHEEL PICKER */
+.wheel-col {
+  flex: 1; height: 216px; overflow-y: scroll; scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none; position: relative; z-index: 3;
+  cursor: grab;
+}
+.wheel-col::-webkit-scrollbar { display: none; }
+.wheel-item {
+  height: 44px; display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 300;
+  color: var(--ink-muted); scroll-snap-align: center; transition: color 0.15s, font-size 0.15s;
+  user-select: none;
+}
+.wheel-item.selected { color: var(--ink); font-size: 24px; font-weight: 400; }
+.backfill-bar {
+  margin: 0 1.5rem 1.25rem;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: var(--radius);
+  border: 0.5px solid var(--divider); background: var(--card);
+}
+.backfill-label { font-size: 12px; color: var(--ink-muted); flex-shrink: 0; }
+.time-input {
+  flex: 1; border: none; background: transparent;
+  font-family: 'DM Mono', monospace; font-size: 15px;
+  font-weight: 400; color: var(--ink); text-align: center;
+  cursor: pointer; outline: none;
+  color-scheme: light dark;
+}
+.backfill-clear {
+  background: none; border: none; cursor: pointer;
+  font-size: 12px; color: var(--ink-muted); padding: 2px 4px;
+  border-radius: 4px; transition: all 0.15s; flex-shrink: 0;
+}
+.backfill-clear:hover { background: var(--sand); color: var(--ink); }
+#backfillBar { display: none; }
+#backfillBar.visible { display: flex; }
+.break-banner {
+  margin: 0 1.5rem 1.25rem;
+  padding: 11px 14px; border-radius: var(--radius);
+  border: 0.5px solid rgba(196,154,60,0.3);
+  background: rgba(196,154,60,0.06);
+  display: none; align-items: center; gap: 10px;
+}
+.break-banner.visible { display: flex; }
+.break-title { font-size: 12px; font-weight: 500; color: #7a5e1a; }
+.break-sub { font-size: 11px; color: var(--ink-muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+/* FINISHED CARD */
+.finished-card {
+  margin: 0 1.5rem 1.25rem;
+  padding: 18px; border-radius: var(--radius);
+  border: 0.5px solid rgba(107,143,107,0.3);
+  background: rgba(107,143,107,0.05);
+  text-align: center; display: none;
+}
+.finished-card.visible { display: block; }
+.finished-title { font-size: 12px; color: #3a5e3a; margin-bottom: 6px; }
+.finished-time { font-family: 'DM Mono', monospace; font-size: 30px; font-weight: 300; color: var(--ink); }
+.finished-sub { font-size: 11px; color: var(--ink-muted); margin-top: 5px; }
+
+/* TIMELINE */
+.section-wrap { padding: 0 1.5rem; }
+.section-label {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-muted); margin-bottom: 10px;
+}
+.session-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 1.25rem; }
+.session-item {
+  display: flex; align-items: center; padding: 10px 13px;
+  border-radius: var(--radius); border: 0.5px solid var(--divider);
+  background: var(--card); gap: 10px;
+}
+.s-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.s-dot.work { background: var(--pulse); }
+.s-dot.brk { background: var(--amber); }
+.s-body { flex: 1; }
+.s-name { font-size: 13px; font-weight: 500; color: var(--ink); }
+.s-time { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+.s-dur { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--ink-muted); }
+
+.empty-hint { text-align: center; padding: 2rem 0; font-size: 13px; color: var(--ink-muted); font-style: italic; }
+
+.divider-line { height: 0.5px; background: var(--divider); margin-bottom: 1.25rem; }
+.total-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 0.5px solid var(--divider); }
+.total-label { font-size: 12px; color: var(--ink-muted); }
+.total-val { font-family: 'DM Mono', monospace; font-size: 16px; color: var(--ink); font-weight: 400; }
+
+.radius-btn {
+  padding: 6px 14px; border-radius: 20px;
+  border: 0.5px solid var(--divider); background: var(--card);
+  color: var(--ink-muted); font-family: 'DM Sans', sans-serif;
+  font-size: 12px; cursor: pointer; transition: all 0.18s;
+}
+.radius-btn.active { background: var(--ink); color: var(--sand); border-color: var(--ink); }
+
+/* EXPORT PAGE */
+.range-btn {
+  padding: 7px 16px; border-radius: 20px;
+  border: 0.5px solid var(--divider); background: var(--card);
+  color: var(--ink-muted); font-family: 'DM Sans', sans-serif;
+  font-size: 12px; cursor: pointer; transition: all 0.18s;
+}
+.range-btn.active { background: var(--ink); color: var(--sand); border-color: var(--ink); }
+.export-btn {
+  flex: 1; padding: 16px 12px; border-radius: var(--radius);
+  border: 0.5px solid var(--divider); background: var(--card);
+  cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; gap: 6px; transition: all 0.18s;
+}
+.export-btn:hover { background: var(--sand); border-color: var(--accent); }
+.export-btn:active { transform: scale(0.97); }
+.export-btn-label { font-size: 13px; font-weight: 500; color: var(--ink); font-family: 'DM Sans', sans-serif; }
+.export-btn-sub { font-size: 11px; color: var(--ink-muted); font-family: 'DM Sans', sans-serif; }
+.preview-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 18px; border-bottom: 0.5px solid var(--divider); gap: 10px;
+}
+.preview-row:last-child { border-bottom: none; }
+.pr-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pulse); flex-shrink: 0; }
+.pr-info { flex: 1; }
+.pr-proj { font-size: 12px; font-weight: 500; color: var(--ink); }
+.pr-date { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+.pr-dur { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--ink-muted); }
+
+/* HISTORY */
+.history-section { padding: 0 1.5rem; margin-top: 1.5rem; }
+.history-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 13px; border-radius: var(--radius);
+  border: 0.5px solid var(--divider); background: var(--card);
+  margin-bottom: 7px;
+}
+.h-left { display: flex; flex-direction: column; gap: 3px; }
+.h-proj { font-size: 13px; font-weight: 500; color: var(--ink); }
+.h-date { font-size: 11px; color: var(--ink-muted); }
+.h-dur { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--ink-muted); }
+
+/* PAGE TABS */
+.tab-bar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 420px;
+  display: flex; background: var(--card);
+  border-top: 0.5px solid var(--divider);
+  z-index: 50;
+}
+.tab-btn {
+  flex: 1; padding: 12px 0 14px;
+  background: none; border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  transition: all 0.18s;
+}
+.tab-icon { font-size: 18px; }
+.tab-label { font-size: 10px; color: var(--ink-muted); letter-spacing: 0.04em; }
+.tab-btn.active .tab-label { color: var(--ink); }
+.tab-btn.active .tab-icon { transform: scale(1.1); }
+
+.page { display: none; }
+.page.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top-bar">
+    <div class="top-left">
+      <span class="app-name">Flow</span>
+      <span class="date-line" id="dateLine"></span>
+    </div>
+    <span class="status-pill" id="statusPill">
+      <span class="status-dot"></span>
+      <span id="statusText" data-i18n="statusIdle">待开始</span>
+    </span>
+  </div>
+
+  <!-- PAGE: TIMER -->
+  <div class="page active" id="page-timer">
+
+    <div class="project-bar">
+      <select class="project-select" id="projectSelect"></select>
+      <button class="btn-new-proj" onclick="openModal()" id="newProjBtn">+</button>
+    </div>
+
+    <div class="ring-wrap">
+      <div class="ring" id="mainRing">
+        <div class="ring-inner">
+          <span class="time-main" id="timerDisplay">00:00:00</span>
+          <span class="time-label" id="timerLabel" data-i18n="netHours">净工时</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-info">
+      <p class="start-hint" id="startHint" data-i18n="startHint">点击开始后切换 App 也会持续计时</p>
+      <div style="display:flex;justify-content:center;margin-bottom:1.25rem;">
+        <button onclick="openTimePicker()" style="display:inline-flex;align-items:center;padding:7px 18px;border-radius:20px;border:0.5px solid var(--divider);background:var(--card);font-size:12px;color:var(--ink-muted);cursor:pointer;font-family:'DM Sans',sans-serif;" id="backfillBtn" data-i18n="backfillBtn">忘记打卡？补录开始时间</button>
+      </div>
+    </div>
+
+    <div class="backfill-bar" id="backfillBar">
+      <span class="backfill-label" data-i18n="startedAt">实际开始于</span>
+      <span class="time-input" id="backfillDisplay">—</span>
+      <button class="backfill-clear" onclick="clearBackfill()">✕</button>
+    </div>
+
+    <div class="btn-row" id="btnRow">
+      <button class="btn primary" onclick="startWork()" data-i18n="btnStart">开始工作</button>
+    </div>
+
+    <div class="break-banner" id="breakBanner">
+      <span style="font-size:18px">☕</span>
+      <div>
+        <div class="break-title" data-i18n="onBreak">休息中</div>
+        <div class="break-sub" id="breakDurText"></div>
+      </div>
+    </div>
+
+    <div class="finished-card" id="finishedCard">
+      <div class="finished-title" data-i18n="workDone">今日工作已结束 ✓</div>
+      <div class="finished-time" id="finishedTime">—</div>
+      <div class="finished-sub" id="finishedSub" data-i18n="hoursRecorded">净工时已记录</div>
+    </div>
+
+    <div class="section-wrap">
+      <div class="divider-line"></div>
+      <p class="section-label" data-i18n="todayTimeline">今日时间线</p>
+      <div class="session-list" id="sessionList">
+        <div class="empty-hint" data-i18n="noRecords">暂无记录</div>
+      </div>
+      <div class="total-row">
+        <span class="total-label" data-i18n="todayNet">今日净工时</span>
+        <span class="total-val" id="totalVal">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: HISTORY -->
+  <div class="page" id="page-history">
+    <div class="history-section" style="margin-top:1rem">
+      <p class="section-label" style="margin-bottom:14px" data-i18n="historyLabel">历史记录</p>
+      <div id="historyList"><div class="empty-hint" data-i18n="noHistory">暂无历史记录</div></div>
+    </div>
+  </div>
+
+  <!-- PAGE: EXPORT -->
+  <div class="page" id="page-export">
+    <div style="padding:1rem 1.5rem 0;">
+
+      <div style="margin-bottom:1.5rem;">
+        <p class="section-label" style="margin-bottom:12px" data-i18n="exportRange">导出范围</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="range-btn active" data-range="today" onclick="selectRange(this)" data-i18n="rangeToday">今天</button>
+          <button class="range-btn" data-range="week" onclick="selectRange(this)" data-i18n="rangeWeek">本周</button>
+          <button class="range-btn" data-range="month" onclick="selectRange(this)" data-i18n="rangeMonth">本月</button>
+          <button class="range-btn" data-range="all" onclick="selectRange(this)" data-i18n="rangeAll">全部</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.5rem;">
+        <p class="section-label" style="margin-bottom:12px" data-i18n="previewLabel">报表预览</p>
+        <div id="exportPreview" style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);overflow:hidden;">
+          <!-- preview header -->
+          <div style="background:var(--sand);padding:16px 18px;border-bottom:0.5px solid var(--divider);">
+            <div style="font-size:11px;color:var(--ink-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;" data-i18n="reportHeader">FLOW · 工时报告</div>
+            <div style="font-size:16px;font-weight:500;color:var(--ink);" id="previewTitle" data-i18n="previewLoading">加载中...</div>
+            <div style="font-size:12px;color:var(--ink-muted);margin-top:2px;" id="previewPeriod"></div>
+          </div>
+          <!-- stats row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border-bottom:0.5px solid var(--divider);">
+            <div style="padding:12px 14px;border-right:0.5px solid var(--divider);">
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;" data-i18n="statTotal">总工时</div>
+              <div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);" id="prevTotal">—</div>
+            </div>
+            <div style="padding:12px 14px;border-right:0.5px solid var(--divider);">
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;" data-i18n="statDays">记录天数</div>
+              <div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);" id="prevDays">—</div>
+            </div>
+            <div style="padding:12px 14px;border-right:0.5px solid var(--divider);">
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;" data-i18n="statAvg">平均/天</div>
+              <div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);" id="prevAvg">—</div>
+            </div>
+            <div style="padding:12px 14px;">
+              <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;" data-i18n="statAmount">应收金额</div>
+              <div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--pulse);" id="prevAmount">—</div>
+            </div>
+          </div>
+          <!-- records list -->
+          <div id="previewRows" style="max-height:240px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <p class="section-label" style="margin-bottom:12px" data-i18n="exportFormat">导出格式</p>
+        <div style="display:flex;gap:10px;">
+          <button class="export-btn" id="pdfBtn" onclick="exportPDF()">
+            <span style="font-size:22px;">📄</span>
+            <span class="export-btn-label" data-i18n="pdfLabel">PDF 报表</span>
+            <span class="export-btn-sub" data-i18n="pdfSub">适合发给客户</span>
+          </button>
+          <button class="export-btn" id="xlsBtn" onclick="exportExcel()">
+            <span style="font-size:22px;">📊</span>
+            <span class="export-btn-label" data-i18n="xlsLabel">Excel 表格</span>
+            <span class="export-btn-sub" data-i18n="xlsSub">适合数据分析</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PAGE: SETTINGS -->
+  <div class="page" id="page-settings">
+    <div style="padding:1rem 1.5rem 0;">
+
+      <!-- LANGUAGE -->
+      <div style="margin-bottom:1.75rem;">
+        <p class="section-label" id="s-lang-label" style="margin-bottom:12px">语言 · Language</p>
+        <div style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);display:flex;overflow:hidden;">
+          <button id="langZH" onclick="setLang('zh')" style="flex:1;padding:12px;background:var(--ink);color:var(--sand);border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;">中文</button>
+          <button id="langEN" onclick="setLang('en')" style="flex:1;padding:12px;background:transparent;color:var(--ink-muted);border:none;border-left:0.5px solid var(--divider);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all 0.2s;">English</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.75rem;">
+        <p class="section-label" style="margin-bottom:12px" data-i18n="geoSection">地理围栏提醒</p>
+        <div style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);overflow:hidden;">
+          <div style="padding:14px 16px;border-bottom:0.5px solid var(--divider);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--ink);" data-i18n="geoTitle">到达办公室自动提醒</div>
+              <div style="font-size:11px;color:var(--ink-muted);margin-top:3px;" data-i18n="geoSub">进入范围时提示开始计时</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:44px;height:26px;cursor:pointer;">
+              <input type="checkbox" id="geoToggle" onchange="toggleGeo()" style="opacity:0;width:0;height:0;position:absolute;">
+              <span id="geoTrack" style="position:absolute;inset:0;border-radius:26px;background:var(--divider);transition:0.3s;"></span>
+              <span id="geoThumb" style="position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:white;transition:0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+            </label>
+          </div>
+          <div id="geoSetupArea" style="display:none;">
+            <div style="padding:14px 16px;border-bottom:0.5px solid var(--divider);">
+              <div style="font-size:12px;color:var(--ink-muted);margin-bottom:10px;" data-i18n="geoRadius">检测半径</div>
+              <div style="display:flex;gap:8px;">
+                <button class="radius-btn active" data-r="200" onclick="selectRadius(this)">200m</button>
+                <button class="radius-btn" data-r="500" onclick="selectRadius(this)">500m</button>
+                <button class="radius-btn" data-r="1000" onclick="selectRadius(this)">1km</button>
+              </div>
+            </div>
+            <div style="padding:14px 16px;">
+              <div id="geoStatus" style="font-size:12px;color:var(--ink-muted);margin-bottom:10px;" data-i18n="geoNotSet">尚未设置办公室位置</div>
+              <button onclick="saveOfficeLocation()" style="padding:9px 18px;border-radius:20px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;width:100%;transition:all 0.18s;" id="saveLocBtn" data-i18n="saveLocBtn">📍 将当前位置设为办公室</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.75rem;">
+        <p class="section-label" style="margin-bottom:12px" data-i18n="aboutLabel">关于</p>
+        <div style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);padding:14px 16px;">
+          <div style="font-size:13px;color:var(--ink);margin-bottom:4px;" data-i18n="aboutTitle">Flow 工时计时器</div>
+          <div style="font-size:11px;color:var(--ink-muted);line-height:1.7;" data-i18n="aboutDesc">数据储存在本地浏览器，不上传任何服务器。<br>跨设备同步需要接入云端服务（开发中）。</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-timer" onclick="switchTab('timer')">
+      <span class="tab-icon">⏱</span>
+      <span class="tab-label" data-i18n="tabTimer">计时</span>
+    </button>
+    <button class="tab-btn" id="tab-history" onclick="switchTab('history')">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label" data-i18n="tabHistory">记录</span>
+    </button>
+    <button class="tab-btn" id="tab-export" onclick="switchTab('export')">
+      <span class="tab-icon">↗</span>
+      <span class="tab-label" data-i18n="tabExport">导出</span>
+    </button>
+    <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">
+      <span class="tab-icon">⚙</span>
+      <span class="tab-label" data-i18n="tabSettings">设置</span>
+    </button>
+  </div>
+</div>
+
+<!-- GEOFENCE REMINDER -->
+<div id="geoReminder" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;z-index:300;padding:1rem 1.25rem 0;">
+  <div style="background:var(--card);border-radius:var(--radius);border:0.5px solid var(--divider);padding:16px;box-shadow:0 4px 24px rgba(0,0,0,0.12);">
+    <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:4px;" data-i18n="geoReminderTitle">你已到达办公室附近</div>
+    <div style="font-size:12px;color:var(--ink-muted);margin-bottom:14px;" id="geoReminderSub" data-i18n="geoReminderSub">要开始记录工时吗？</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="dismissGeoReminder()" style="flex:1;padding:9px;border-radius:20px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink-muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;"data-i18n="geoDismiss">稍后再说</button>
+      <button onclick="startFromReminder()" style="flex:2;padding:9px;border-radius:20px;border:none;background:var(--ink);color:var(--sand);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;"data-i18n="geoStart">开始计时</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PROJECT MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h3 data-i18n="modalTitle">新增项目</h3>
+    <input type="text" id="projNameInput" placeholder="项目名称，如：产品设计 · Sprint 5" maxlength="40">
+    <input type="text" id="projSubInput" placeholder="备注（可选），如：UI/UX 迭代">
+    <div style="position:relative;">
+      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--ink-muted);">$</span>
+      <input type="number" id="projRateInput" placeholder="时薪（可选），如：300" min="0" style="padding-left:26px;">
+    </div>
+    <div class="modal-btns">
+      <button onclick="closeModal()" data-i18n="cancel">取消</button>
+      <button class="btn-confirm" onclick="addProject()" data-i18n="add">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- TIME PICKER -->
+<div id="timePickerOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-end;justify-content:center;" onclick="closeTimePickerOutside(event)">
+  <div id="timePickerSheet" style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:420px;padding-bottom:2rem;border-top:0.5px solid var(--divider);">
+    <!-- handle -->
+    <div style="display:flex;justify-content:center;padding:12px 0 0;">
+      <div style="width:36px;height:4px;border-radius:4px;background:var(--divider);"></div>
+    </div>
+    <!-- header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 8px;">
+      <button onclick="closeTimePicker()" style="background:none;border:none;font-size:14px;color:var(--ink-muted);cursor:pointer;font-family:'DM Sans',sans-serif;" data-i18n="cancel">取消</button>
+      <span style="font-size:14px;font-weight:500;color:var(--ink);" data-i18n="pickerTitle">补录开始时间</span>
+      <button onclick="confirmTimePicker()" style="background:none;border:none;font-size:14px;color:#3a5e3a;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;"data-i18n="confirm">确认</button>
+    </div>
+    <!-- wheels -->
+    <div style="display:flex;justify-content:center;align-items:center;gap:0;position:relative;height:216px;overflow:hidden;padding:0 40px;">
+      <!-- fade top -->
+      <div style="position:absolute;top:0;left:0;right:0;height:80px;background:linear-gradient(to bottom,var(--card),transparent);z-index:2;pointer-events:none;"></div>
+      <!-- fade bottom -->
+      <div style="position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(to top,var(--card),transparent);z-index:2;pointer-events:none;"></div>
+      <!-- selection bar -->
+      <div style="position:absolute;top:50%;left:20px;right:20px;transform:translateY(-50%);height:44px;border-radius:10px;background:var(--sand);z-index:1;pointer-events:none;"></div>
+      <!-- hour col -->
+      <div id="wheelHour" class="wheel-col"></div>
+      <div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--ink);margin:0 6px;z-index:3;position:relative;">:</div>
+      <!-- minute col -->
+      <div id="wheelMin" class="wheel-col"></div>
+      <div style="width:12px;"></div>
+      <!-- AM/PM col -->
+      <div id="wheelAmpm" class="wheel-col" style="flex:0 0 64px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────
+const S = { IDLE:'idle', RUNNING:'running', BREAK:'break', DONE:'done' };
+let state = S.IDLE;
+let workStartTs = null;
+let breakStartTs = null;
+let sessions = [];
+let tickInterval = null;
+
+// ─── STORAGE ─────────────────────────────────────────
+function save() {
+  localStorage.setItem('flow_state', JSON.stringify({
+    state, workStartTs, breakStartTs, sessions
+  }));
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('flow_state') || 'null');
+    if (!d) return;
+    state = d.state;
+    workStartTs = d.workStartTs;
+    breakStartTs = d.breakStartTs;
+    sessions = d.sessions || [];
+  } catch(e) {}
+}
+
+function loadProjects() {
+  const raw = localStorage.getItem('flow_projects');
+  if (raw) return JSON.parse(raw);
+  const defaults = [
+    { name:'产品设计 · Sprint 4', sub:'UI/UX 迭代' },
+    { name:'客户沟通', sub:'需求讨论 / 演示' },
+    { name:'代码审查', sub:'PR Review' },
+    { name:'内部运营', sub:'文档 / 会议' },
+  ];
+  localStorage.setItem('flow_projects', JSON.stringify(defaults));
+  return defaults;
+}
+
+function saveProjects(projects) {
+  localStorage.setItem('flow_projects', JSON.stringify(projects));
+}
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem('flow_history') || '[]'); }
+  catch(e) { return []; }
+}
+
+function saveHistory(item) {
+  const h = loadHistory();
+  h.unshift(item);
+  localStorage.setItem('flow_history', JSON.stringify(h.slice(0, 60)));
+}
+
+// ─── HELPERS ─────────────────────────────────────────
+function pad(n) { return String(Math.floor(n)).padStart(2,'0'); }
+function fmtDuration(ms) {
+  const s = Math.floor(ms/1000);
+  return pad(s/3600)+':'+pad((s%3600)/60)+':'+pad(s%60);
+}
+function fmtShort(ms) {
+  const m = Math.floor(ms/60000);
+  const h = Math.floor(m/60); const mm = m%60;
+  return h>0 ? h+'h '+(mm<10?'0':'')+mm+'m' : mm+'m';
+}
+function fmtTime(ts) {
+  const d = new Date(ts);
+  return pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return lang==='zh' ? (d.getMonth()+1)+'月'+d.getDate()+'日' : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate();
+}
+
+function getNetWork() {
+  let net = 0;
+  sessions.forEach(s => { if (s.type==='work' && s.end) net += s.end - s.start; });
+  if (state===S.RUNNING && workStartTs) net += Date.now() - workStartTs;
+  return net;
+}
+
+// ─── RENDER ──────────────────────────────────────────
+function renderSessions() {
+  const list = document.getElementById('sessionList');
+  if (!sessions.length) { list.innerHTML=`<div class="empty-hint">${t('noRecords')}</div>`; return; }
+  list.innerHTML = sessions.map(s => {
+    const isWork = s.type==='work';
+    const dur = s.end ? fmtShort(s.end-s.start) : t('inProgress');
+    const endStr = s.end ? fmtTime(s.end) : '—';
+    return `<div class="session-item">
+      <span class="s-dot ${isWork?'work':'brk'}"></span>
+      <div class="s-body">
+        <div class="s-name">${isWork ? t('sessionWork') : t('sessionBreak')}</div>
+        <div class="s-time">${fmtTime(s.start)} → ${endStr}</div>
+      </div>
+      <span class="s-dur">${dur}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const h = loadHistory();
+  const el = document.getElementById('historyList');
+  if (!h.length) { el.innerHTML=`<div class="empty-hint">${t('noHistory')}</div>`; return; }
+  el.innerHTML = h.map((item, i) => `
+    <div class="history-item">
+      <div class="h-left">
+        <div class="h-proj">${item.project}</div>
+        <div class="h-date">${item.dateStr}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="h-dur">${item.duration}</span>
+        <button onclick="deleteHistory(${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-muted);padding:4px;border-radius:6px;line-height:1;transition:all 0.15s;" onmouseover="this.style.color='#c0392b';this.style.background='rgba(192,57,43,0.08)'" onmouseout="this.style.color='var(--ink-muted)';this.style.background='none'">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteHistory(idx) {
+  const h = loadHistory();
+  h.splice(idx, 1);
+  localStorage.setItem('flow_history', JSON.stringify(h));
+  renderHistory();
+}
+
+function renderProjects() {
+  const projects = loadProjects();
+  const sel = document.getElementById('projectSelect');
+  const cur = sel.value;
+  sel.innerHTML = projects.map((p,i) =>
+    `<option value="${i}">${p.name}</option>`
+  ).join('');
+  if (cur) sel.value = cur;
+}
+
+function setStatus(cls, text) {
+  const pill = document.getElementById('statusPill');
+  pill.className = 'status-pill '+cls;
+  document.getElementById('statusText').textContent = text;
+}
+
+function setBtns(html) { document.getElementById('btnRow').innerHTML = html; }
+
+function applyState() {
+  const ring = document.getElementById('mainRing');
+  const hint = document.getElementById('startHint');
+  const bb = document.getElementById('breakBanner');
+  const fc = document.getElementById('finishedCard');
+
+  hint.style.display = state === S.IDLE ? 'block' : 'none';
+  bb.classList.toggle('visible', state === S.BREAK);
+  fc.classList.toggle('visible', state === S.DONE);
+
+  ring.className = 'ring' + (state===S.RUNNING?' running':state===S.BREAK?' on-break':'');
+
+  if (state === S.IDLE) {
+    setStatus('', t('statusIdle'));
+    setBtns(`<button class="btn primary" onclick="startWork()">${t('btnStart')}</button>`);
+    document.getElementById('timerLabel').textContent = t('netHours');
+  } else if (state === S.RUNNING) {
+    setStatus('running', t('statusRunning'));
+    setBtns(`
+      <button class="btn break-btn" onclick="goBreak()">${t('btnBreak')}</button>
+      <button class="btn" onclick="endWork()">${t('btnEnd')}</button>
+    `);
+    document.getElementById('timerLabel').textContent = t('netHours');
+  } else if (state === S.BREAK) {
+    setStatus('on-break', t('statusBreak'));
+    setBtns(`
+      <button class="btn resume-btn" onclick="resumeWork()">${t('btnResume')}</button>
+      <button class="btn" onclick="endWork()">${t('btnEnd')}</button>
+    `);
+    document.getElementById('timerLabel').textContent = t('onBreak');
+  } else if (state === S.DONE) {
+    setStatus('', t('statusDone'));
+    setBtns(`<button class="btn primary" onclick="resetAll()">${t('btnNew')}</button>`);
+    document.getElementById('timerLabel').textContent = t('netHours');
+  }
+
+  const net = getNetWork();
+  document.getElementById('timerDisplay').textContent = fmtDuration(net);
+  document.getElementById('totalVal').textContent = net > 0 ? fmtDuration(net) : '—';
+  renderSessions();
+}
+
+// ─── TIMER TICK ──────────────────────────────────────
+function tick() {
+  if (state === S.RUNNING) {
+    const net = getNetWork();
+    document.getElementById('timerDisplay').textContent = fmtDuration(net);
+    document.getElementById('totalVal').textContent = fmtDuration(net);
+  } else if (state === S.BREAK) {
+    const bd = Date.now() - breakStartTs;
+    document.getElementById('breakDurText').textContent = t('paused')+' '+fmtDuration(bd);
+  }
+}
+
+// ─── WHEEL TIME PICKER ───────────────────────────────
+let pickerHour = null;
+let pickerMin = null;
+
+function buildWheel(el, items, selectedIdx) {
+  el.innerHTML = '';
+  for (let i = 0; i < 2; i++) el.appendChild(makeItem('', -1));
+  items.forEach((text, i) => {
+    const item = makeItem(text, i);
+    item.dataset.val = i;
+    if (i === selectedIdx) item.classList.add('selected');
+    el.appendChild(item);
+  });
+  for (let i = 0; i < 3; i++) el.appendChild(makeItem('', -1));
+}
+
+function makeItem(text, idx) {
+  const d = document.createElement('div');
+  d.className = 'wheel-item';
+  d.textContent = text;
+  return d;
+}
+
+function scrollToIdx(el, idx) {
+  el.scrollTop = idx * 44;
+}
+
+function getSelectedIdx(el) {
+  return Math.round(el.scrollTop / 44);
+}
+
+function updateSelected(el) {
+  const val = getSelectedIdx(el);
+  el.querySelectorAll('.wheel-item').forEach(item => {
+    const v = item.dataset.val;
+    item.classList.toggle('selected', v !== undefined && parseInt(v) === val);
+  });
+}
+
+function openTimePicker() {
+  const now = new Date();
+  const h24 = now.getHours();
+  const isPM = h24 >= 12;
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  const m = now.getMinutes();
+
+  const hours = ['12','1','2','3','4','5','6','7','8','9','10','11'];
+  const mins = Array.from({length:60}, (_,i) => String(i).padStart(2,'0'));
+  const ampm = ['AM','PM'];
+
+  const hourEl = document.getElementById('wheelHour');
+  const minEl = document.getElementById('wheelMin');
+  const ampmEl = document.getElementById('wheelAmpm');
+
+  buildWheel(hourEl, hours, h12 === 12 ? 0 : h12);
+  buildWheel(minEl, mins, m);
+  buildWheel(ampmEl, ampm, isPM ? 1 : 0);
+
+  requestAnimationFrame(() => {
+    scrollToIdx(hourEl, h12 === 12 ? 0 : h12);
+    scrollToIdx(minEl, m);
+    scrollToIdx(ampmEl, isPM ? 1 : 0);
+  });
+
+  hourEl.onscroll = () => updateSelected(hourEl);
+  minEl.onscroll = () => updateSelected(minEl);
+  ampmEl.onscroll = () => updateSelected(ampmEl);
+
+  document.getElementById('timePickerOverlay').style.display = 'flex';
+}
+
+function closeTimePicker() {
+  document.getElementById('timePickerOverlay').style.display = 'none';
+}
+
+function closeTimePickerOutside(e) {
+  if (e.target === document.getElementById('timePickerOverlay')) closeTimePicker();
+}
+
+function confirmTimePicker() {
+  const hours = ['12','1','2','3','4','5','6','7','8','9','10','11'];
+  const hIdx = getSelectedIdx(document.getElementById('wheelHour'));
+  const mIdx = getSelectedIdx(document.getElementById('wheelMin'));
+  const apIdx = getSelectedIdx(document.getElementById('wheelAmpm'));
+
+  const h12 = parseInt(hours[Math.min(hIdx, 11)]);
+  const isPM = apIdx === 1;
+  let h24 = h12 % 12 + (isPM ? 12 : 0);
+
+  pickerHour = h24;
+  pickerMin = mIdx;
+
+  const hStr = String(h24).padStart(2,'0');
+  const mStr = String(mIdx).padStart(2,'0');
+  const apStr = isPM ? 'PM' : 'AM';
+  document.getElementById('backfillDisplay').textContent = hStr + ':' + mStr + ' ' + apStr;
+  document.getElementById('backfillBar').classList.add('visible');
+  closeTimePicker();
+}
+
+function clearBackfill() {
+  document.getElementById('backfillBar').classList.remove('visible');
+  pickerHour = null; pickerMin = null;
+}
+
+function getStartTs() {
+  const bar = document.getElementById('backfillBar');
+  if (bar.classList.contains('visible') && pickerHour !== null) {
+    const d = new Date();
+    d.setHours(pickerHour, pickerMin, 0, 0);
+    return d.getTime() > Date.now() ? Date.now() : d.getTime();
+  }
+  return Date.now();
+}
+
+function startWork() {
+  workStartTs = getStartTs();
+  sessions = [{ type:'work', start: workStartTs, end: null }];
+  state = S.RUNNING;
+  clearBackfill();
+  clearInterval(tickInterval); tickInterval = setInterval(tick, 1000);
+  applyState(); save();
+}
+
+function goBreak() {
+  const now = Date.now();
+  sessions[sessions.length-1].end = now;
+  breakStartTs = now;
+  sessions.push({ type:'break', start: now, end: null });
+  state = S.BREAK;
+  applyState(); save();
+}
+
+function resumeWork() {
+  const now = Date.now();
+  sessions[sessions.length-1].end = now;
+  workStartTs = now;
+  sessions.push({ type:'work', start: now, end: null });
+  state = S.RUNNING;
+  applyState(); save();
+}
+
+function endWork() {
+  clearInterval(tickInterval);
+  const now = Date.now();
+  sessions[sessions.length-1].end = now;
+  state = S.DONE;
+
+  const net = getNetWork();
+  document.getElementById('timerDisplay').textContent = fmtDuration(net);
+  document.getElementById('finishedTime').textContent = fmtDuration(net);
+  const wSegs = sessions.filter(s=>s.type==='work').length;
+  const bSegs = sessions.filter(s=>s.type==='break').length;
+  document.getElementById('finishedSub').textContent = lang==='zh' ? `共 ${wSegs} 段工作 · ${bSegs} 次休息` : `${wSegs} work segment${wSegs>1?'s':''} · ${bSegs} break${bSegs>1?'s':''}`;
+  document.getElementById('totalVal').textContent = fmtDuration(net);
+
+  const projects = loadProjects();
+  const selIdx = parseInt(document.getElementById('projectSelect').value) || 0;
+  const proj = projects[selIdx] || {};
+  const projName = proj.name || (lang==='zh' ? '未命名项目' : 'Unnamed Project');
+  const rate = proj.rate || 0;
+  saveHistory({ project: projName, dateStr: fmtDate(Date.now()), duration: fmtDuration(net), ms: net, ts: Date.now(), rate });
+
+  applyState(); save();
+}
+
+function resetAll() {
+  clearInterval(tickInterval);
+  state = S.IDLE; sessions = []; workStartTs = null; breakStartTs = null;
+  document.getElementById('finishedCard').classList.remove('visible');
+  clearBackfill();
+  applyState(); save();
+}
+
+// ─── PROJECTS ────────────────────────────────────────
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('projNameInput').focus();
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+function addProject() {
+  const name = document.getElementById('projNameInput').value.trim();
+  if (!name) return;
+  const sub = document.getElementById('projSubInput').value.trim();
+  const rate = parseFloat(document.getElementById('projRateInput').value) || 0;
+  const projects = loadProjects();
+  projects.push({ name, sub, rate });
+  saveProjects(projects);
+  renderProjects();
+  document.getElementById('projectSelect').value = projects.length - 1;
+  document.getElementById('projNameInput').value = '';
+  document.getElementById('projSubInput').value = '';
+  document.getElementById('projRateInput').value = '';
+  closeModal();
+}
+
+// ─── TABS ─────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (tab === 'history') renderHistory();
+  if (tab === 'export') renderExportPreview();
+  if (tab === 'settings') renderGeoSettings();
+}
+
+// ─── GEOFENCING ──────────────────────────────────────
+let geoWatchId = null;
+let geoRadius = 200;
+let geoReminderShown = false;
+
+function loadGeoPrefs() {
+  try { return JSON.parse(localStorage.getItem('flow_geo') || '{}'); } catch(e) { return {}; }
+}
+function saveGeoPrefs(prefs) {
+  localStorage.setItem('flow_geo', JSON.stringify(prefs));
+}
+
+function renderGeoSettings() {
+  const prefs = loadGeoPrefs();
+  const toggle = document.getElementById('geoToggle');
+  const track = document.getElementById('geoTrack');
+  const thumb = document.getElementById('geoThumb');
+  const area = document.getElementById('geoSetupArea');
+
+  toggle.checked = !!prefs.enabled;
+  track.style.background = prefs.enabled ? 'var(--pulse)' : 'var(--divider)';
+  thumb.style.left = prefs.enabled ? '21px' : '3px';
+  area.style.display = prefs.enabled ? 'block' : 'none';
+
+  geoRadius = prefs.radius || 200;
+  document.querySelectorAll('.radius-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.r) === geoRadius);
+  });
+
+  const status = document.getElementById('geoStatus');
+  if (prefs.lat && prefs.lng) {
+    status.textContent = lang==='zh' ? `办公室已设置 · 半径 ${geoRadius}m` : `Office set · Radius ${geoRadius}m`;
+    status.style.color = 'var(--pulse)';
+    document.getElementById('saveLocBtn').textContent = t('updateLocBtn');
+  } else {
+    status.textContent = t('geoNotSet');
+    status.style.color = 'var(--ink-muted)';
+    document.getElementById('saveLocBtn').textContent = t('saveLocBtn');
+  }
+}
+
+function toggleGeo() {
+  const enabled = document.getElementById('geoToggle').checked;
+  const track = document.getElementById('geoTrack');
+  const thumb = document.getElementById('geoThumb');
+  const area = document.getElementById('geoSetupArea');
+
+  track.style.background = enabled ? 'var(--pulse)' : 'var(--divider)';
+  thumb.style.left = enabled ? '21px' : '3px';
+  area.style.display = enabled ? 'block' : 'none';
+
+  const prefs = loadGeoPrefs();
+  prefs.enabled = enabled;
+  saveGeoPrefs(prefs);
+
+  if (enabled) startGeoWatch();
+  else stopGeoWatch();
+}
+
+function selectRadius(btn) {
+  document.querySelectorAll('.radius-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  geoRadius = parseInt(btn.dataset.r);
+  const prefs = loadGeoPrefs();
+  prefs.radius = geoRadius;
+  saveGeoPrefs(prefs);
+  renderGeoSettings();
+}
+
+function saveOfficeLocation() {
+  const btn = document.getElementById('saveLocBtn');
+  btn.textContent = t('geoLocating');
+  if (!navigator.geolocation) {
+    alert(t('geoUnsupported'));
+    btn.textContent = t('saveLocBtn');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const prefs = loadGeoPrefs();
+    prefs.lat = pos.coords.latitude;
+    prefs.lng = pos.coords.longitude;
+    saveGeoPrefs(prefs);
+    renderGeoSettings();
+  }, () => {
+    alert(t('geoFail'));
+    btn.textContent = t('saveLocBtn');
+  });
+}
+
+function getDistanceM(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLng = (lng2-lng1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function startGeoWatch() {
+  if (!navigator.geolocation) return;
+  stopGeoWatch();
+  geoWatchId = navigator.geolocation.watchPosition(pos => {
+    const prefs = loadGeoPrefs();
+    if (!prefs.enabled || !prefs.lat || !prefs.lng) return;
+    if (state !== S.IDLE || geoReminderShown) return;
+
+    const dist = getDistanceM(pos.coords.latitude, pos.coords.longitude, prefs.lat, prefs.lng);
+    const radius = prefs.radius || 200;
+    if (dist <= radius) {
+      geoReminderShown = true;
+      const distStr = Math.round(dist) + 'm';
+      document.getElementById('geoReminderSub').textContent = lang==='zh' ? `距离办公室 ${distStr}，要开始记录工时吗？` : `You're ${distStr} from the office. Start tracking?`;
+      document.getElementById('geoReminder').style.display = 'block';
+    }
+  }, null, { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 });
+}
+
+function stopGeoWatch() {
+  if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
+}
+
+function dismissGeoReminder() {
+  document.getElementById('geoReminder').style.display = 'none';
+}
+
+function startFromReminder() {
+  dismissGeoReminder();
+  switchTab('timer');
+  startWork();
+}
+
+// ─── EXPORT ──────────────────────────────────────────
+let currentRange = 'today';
+
+function selectRange(btn) {
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRange = btn.dataset.range;
+  renderExportPreview();
+}
+
+function getFilteredHistory() {
+  const all = loadHistory();
+  const now = new Date();
+  return all.filter(item => {
+    const d = new Date(item.ts || Date.now());
+    if (currentRange === 'today') {
+      return d.toDateString() === now.toDateString();
+    } else if (currentRange === 'week') {
+      const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
+      return d >= weekAgo;
+    } else if (currentRange === 'month') {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+    return true;
+  });
+}
+
+function msToHours(ms) { return (ms / 3600000).toFixed(1); }
+
+function renderExportPreview() {
+  const items = getFilteredHistory();
+  const now = new Date();
+  document.getElementById('previewTitle').textContent = ranges()[currentRange] + (lang==='zh' ? '工时报告' : ' Report');
+  document.getElementById('previewPeriod').textContent = lang==='zh' ? now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 导出' : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
+
+  if (!items.length) {
+    document.getElementById('prevTotal').textContent = '—';
+    document.getElementById('prevDays').textContent = '—';
+    document.getElementById('prevAvg').textContent = '—';
+    document.getElementById('previewRows').innerHTML = `<div class="empty-hint" style="padding:1.5rem">${t('noRecords')}</div>`;
+    return;
+  }
+
+  const totalMs = items.reduce((a, b) => a + (b.ms || 0), 0);
+  const days = new Set(items.map(i => i.dateStr)).size;
+  const avg = days > 0 ? totalMs / days : 0;
+  const totalAmount = items.reduce((a, b) => a + (b.rate ? (b.ms/3600000) * b.rate : 0), 0);
+  const hasRate = items.some(i => i.rate > 0);
+
+  document.getElementById('prevTotal').textContent = msToHours(totalMs) + 'h';
+  document.getElementById('prevDays').textContent = lang==='zh' ? days+'天' : days+(days===1?' day':' days');
+  document.getElementById('prevAvg').textContent = msToHours(avg) + 'h';
+  document.getElementById('prevAmount').textContent = hasRate ? '$' + Math.round(totalAmount).toLocaleString() : t('noRateSet');
+
+  document.getElementById('previewRows').innerHTML = items.map(item => {
+    const amt = item.rate ? '$' + Math.round((item.ms/3600000) * item.rate) : '';
+    return `<div class="preview-row">
+      <span class="pr-dot"></span>
+      <div class="pr-info">
+        <div class="pr-proj">${item.project}${item.rate ? ' · $'+item.rate+'/h' : ''}</div>
+        <div class="pr-date">${item.dateStr}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="pr-dur">${item.duration}</div>
+        ${amt ? `<div style="font-size:11px;color:var(--pulse);margin-top:2px;">${amt}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function exportPDF() {
+  const items = getFilteredHistory();
+  if (!items.length) { alert(t('noExportData')); return; }
+
+  const now = new Date();
+  const labels = { today:'今天', week:'本周', month:'本月', all:'全部记录' };
+  const totalMs = items.reduce((a,b)=>a+(b.ms||0),0);
+  const days = new Set(items.map(i=>i.dateStr)).size;
+  const avg = days>0 ? totalMs/days : 0;
+  const totalAmount = items.reduce((a,b)=>a+(b.rate?(b.ms/3600000)*b.rate:0),0);
+  const hasRate = items.some(i=>i.rate>0);
+
+  const rows = items.map((item,i) => {
+    const amt = item.rate ? '$'+Math.round((item.ms/3600000)*item.rate).toLocaleString() : '—';
+    return `<tr style="background:${i%2===0?'#fafaf8':'#fff'}">
+      <td>${item.project}</td>
+      <td>${item.dateStr}</td>
+      <td style="font-family:monospace">${item.duration}</td>
+      ${hasRate ? `<td style="color:#3d6b3d;font-weight:500">${amt}</td>` : ''}
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${t('reportTitle')}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; color:#2C2720; background:#fff; padding:12mm 14mm; }
+    .header { background:#F5F2ED; padding:12px 16px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:flex-end; }
+    .header h1 { font-size:20px; font-weight:500; }
+    .header p { font-size:11px; color:#7A7269; }
+    .stats { display:grid; grid-template-columns:repeat(${hasRate?4:3},1fr); gap:10px; margin-bottom:20px; }
+    .stat { background:#F5F2ED; border-radius:6px; padding:10px 12px; }
+    .stat label { font-size:10px; color:#7A7269; display:block; margin-bottom:4px; }
+    .stat span { font-size:16px; font-weight:500; font-family:'DM Mono',monospace; }
+    .stat.amount span { color:#3d6b3d; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    thead tr { background:#E8E3DA; }
+    th { padding:8px 10px; text-align:left; font-weight:500; font-size:11px; color:#7A7269; }
+    td { padding:8px 10px; border-bottom:0.5px solid #E0DBD3; }
+    .total-row td { background:#E8E3DA; font-weight:500; }
+    .footer { margin-top:20px; padding-top:10px; border-top:0.5px solid #E0DBD3; display:flex; justify-content:space-between; font-size:10px; color:#7A7269; }
+    @media print { body { padding:8mm 10mm; } }
+  </style></head><body>
+  <div class="header">
+    <div><p style="font-size:10px;color:#7A7269;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px">${t('reportHeader')}</p><h1>${ranges()[currentRange]} ${lang==='zh'?'工时报告':'Report'}</h1></div>
+    <p>${lang==='zh'?now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日':['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]+' '+now.getDate()+', '+now.getFullYear()}</p>
+  </div>
+  <div class="stats">
+    <div class="stat"><label>${t('statTotal')}</label><span>${msToHours(totalMs)}h</span></div>
+    <div class="stat"><label>${t('statDays')}</label><span>${lang==='zh'?days+'天':days+(days===1?' day':' days')}</span></div>
+    <div class="stat"><label>${t('statAvg')}</label><span>${msToHours(avg)}h</span></div>
+    ${hasRate ? `<div class="stat amount"><label>${t('statAmount')}</label><span>$${Math.round(totalAmount).toLocaleString()}</span></div>` : ''}
+  </div>
+  <table>
+    <thead><tr>
+      <th>${t('colProject')}</th><th>${t('colDate')}</th><th>${t('colDuration')}</th>
+      ${hasRate ? `<th>${t('statAmount')}</th>` : ''}
+    </tr></thead>
+    <tbody>${rows}</tbody>
+    ${hasRate ? `<tfoot><tr class="total-row"><td>${t('total')}</td><td></td><td style="font-family:monospace">${msToHours(totalMs)}h</td><td style="color:#3d6b3d">$${Math.round(totalAmount).toLocaleString()}</td></tr></tfoot>` : ''}
+  </table>
+  <div class="footer"><span>${t('reportGenerated')}</span><span>gracieory.github.io/FLOW/</span></div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
+async function exportExcel() {
+  const items = getFilteredHistory();
+  if (!items.length) { alert(t('noExportData')); return; }
+  const btn = document.getElementById('xlsBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+  try {
+    await new Promise((resolve, reject) => {
+      if (window.XLSX) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  } catch(e) {
+    alert(lang==='zh'?'库加载失败，请检查网络':'Failed to load library. Check network.');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    return;
+  }
+
+  const XLSX = window.XLSX;
+  const wb = XLSX.utils.book_new();
+
+  // Summary sheet
+  const totalMs = items.reduce((a,b)=>a+(b.ms||0),0);
+  const days = new Set(items.map(i=>i.dateStr)).size;
+  const totalAmount = items.reduce((a,b)=>a+(b.rate?(b.ms/3600000)*b.rate:0),0);
+  const hasRate = items.some(i=>i.rate>0);
+  const summaryData = [
+    [t('reportTitle')],
+    [],
+    [t('exportTime'), new Date().toLocaleString()],
+    [t('exportRange2'), ranges()[currentRange]],
+    [t('statTotal'), msToHours(totalMs)+'h'],
+    [t('statDays'), days+(lang==='zh'?'天':' days')],
+    [t('statAvg'), msToHours(totalMs/days)+'h'],
+    ...(hasRate ? [[t('statAmount'), '$'+Math.round(totalAmount).toLocaleString()]] : []),
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+  ws1['!cols'] = [{wch:16},{wch:24}];
+  XLSX.utils.book_append_sheet(wb, ws1, t('summarySheet'));
+
+  // Detail sheet
+  const detailHeaders = [t('colProject'),t('colDate'),t('colDuration'),t('colHours')];
+  if (hasRate) detailHeaders.push(t('colRate'), t('colAmount'));
+  const detailData = [detailHeaders];
+  items.forEach(item => {
+    const row = [item.project, item.dateStr, item.duration, parseFloat(msToHours(item.ms||0))];
+    if (hasRate) {
+      row.push(item.rate || 0);
+      row.push(item.rate ? Math.round((item.ms/3600000)*item.rate) : 0);
+    }
+    detailData.push(row);
+  });
+  // Total row
+  if (hasRate) {
+    detailData.push([t('total'), '', '', parseFloat(msToHours(totalMs)), '', Math.round(totalAmount)]);
+  }
+  const ws2 = XLSX.utils.aoa_to_sheet(detailData);
+  ws2['!cols'] = [{wch:30},{wch:12},{wch:14},{wch:10},{wch:12},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws2, t('detailSheet'));
+
+  const now = new Date();
+  XLSX.writeFile(wb, 'Flow_Hours_'+now.getFullYear()+(now.getMonth()+1)+now.getDate()+'.xlsx');
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+}
+
+// ─── I18N ─────────────────────────────────────────────
+const STRINGS = {
+  zh: {
+    title: 'Flow · 工时计时器',
+    statusIdle: '待开始', statusRunning: '计时中', statusBreak: '休息中', statusDone: '已结束',
+    netHours: '净工时', onBreak: '休息中',
+    startHint: '点击开始后切换 App 也会持续计时',
+    backfillBtn: '忘记打卡？补录开始时间',
+    startedAt: '实际开始于',
+    btnStart: '开始工作', btnBreak: '☕ 休息一下', btnResume: '返回工位', btnEnd: '结束工作', btnNew: '新建记录',
+    workDone: '今日工作已结束 ✓', hoursRecorded: '净工时已记录',
+    todayTimeline: '今日时间线', noRecords: '暂无记录', todayNet: '今日净工时',
+    sessionWork: '工作中', sessionBreak: '休息', inProgress: '进行中',
+    paused: '已暂停',
+    historyLabel: '历史记录', noHistory: '暂无历史记录',
+    exportRange: '导出范围', rangeToday: '今天', rangeWeek: '本周', rangeMonth: '本月', rangeAll: '全部',
+    previewLabel: '报表预览', reportHeader: 'FLOW · 工时报告', previewLoading: '加载中...',
+    statTotal: '总工时', statDays: '记录天数', statAvg: '平均/天', statAmount: '应收金额',
+    noRateSet: '未设置时薪', noExportData: '暂无记录可导出',
+    exportFormat: '导出格式', pdfLabel: 'PDF 报表', pdfSub: '适合发给客户', xlsLabel: 'Excel 表格', xlsSub: '适合数据分析',
+    geoSection: '地理围栏提醒', geoTitle: '到达办公室自动提醒', geoSub: '进入范围时提示开始计时',
+    geoRadius: '检测半径', geoNotSet: '尚未设置办公室位置', geoSet: '办公室已设置', geoLocating: '定位中...',
+    saveLocBtn: '📍 将当前位置设为办公室', updateLocBtn: '📍 更新办公室位置',
+    geoFail: '定位失败，请检查浏览器权限', geoUnsupported: '此浏览器不支持定位',
+    geoReminderTitle: '你已到达办公室附近', geoReminderSub: '要开始记录工时吗？',
+    geoDismiss: '稍后再说', geoStart: '开始计时',
+    aboutLabel: '关于', aboutTitle: 'Flow 工时计时器',
+    aboutDesc: '数据储存在本地浏览器，不上传任何服务器。<br>跨设备同步需要接入云端服务（开发中）。',
+    tabTimer: '计时', tabHistory: '记录', tabExport: '导出', tabSettings: '设置',
+    modalTitle: '新增项目', projNamePH: '项目名称，如：产品设计 · Sprint 5',
+    projSubPH: '备注（可选），如：UI/UX 迭代', projRatePH: '时薪（可选），如：300',
+    cancel: '取消', add: '添加',
+    pickerTitle: '补录开始时间', confirm: '确认',
+    reportTitle: '工时报告', reportGenerated: '由 Flow 自动生成',
+    summarySheet: '摘要', detailSheet: '明细',
+    exportTime: '导出时间', exportRange2: '统计范围',
+    colProject: '项目名称', colDate: '日期', colDuration: '工时(h:m:s)', colHours: '工时(小时)', colRate: '时薪($/h)', colAmount: '应收金额($)',
+    total: '合计', days: '天', perDay: '平均/天',
+    weeks: ['周日','周一','周二','周三','周四','周五','周六'],
+    ranges: { today:'今天', week:'本周', month:'本月', all:'全部记录' },
+  },
+  en: {
+    title: 'Flow · Time Tracker',
+    statusIdle: 'Ready', statusRunning: 'Tracking', statusBreak: 'On Break', statusDone: 'Done',
+    netHours: 'Net Hours', onBreak: 'On Break',
+    startHint: 'Timer keeps running even when you switch apps',
+    backfillBtn: 'Forgot to clock in? Set start time',
+    startedAt: 'Started at',
+    btnStart: 'Start', btnBreak: '☕ Take a Break', btnResume: 'Back to Work', btnEnd: 'End Session', btnNew: 'New Session',
+    workDone: "Today's session ended ✓", hoursRecorded: 'Net hours recorded',
+    todayTimeline: "Today's Timeline", noRecords: 'No records yet', todayNet: 'Net Hours Today',
+    sessionWork: 'Working', sessionBreak: 'Break', inProgress: 'In progress',
+    paused: 'Paused',
+    historyLabel: 'History', noHistory: 'No history yet',
+    exportRange: 'Date Range', rangeToday: 'Today', rangeWeek: 'This Week', rangeMonth: 'This Month', rangeAll: 'All Time',
+    previewLabel: 'Preview', reportHeader: 'FLOW · TIME REPORT', previewLoading: 'Loading...',
+    statTotal: 'Total Hours', statDays: 'Days', statAvg: 'Avg/Day', statAmount: 'Billable',
+    noRateSet: 'No rate set', noExportData: 'No records to export',
+    exportFormat: 'Export Format', pdfLabel: 'PDF Report', pdfSub: 'Great for clients', xlsLabel: 'Excel Sheet', xlsSub: 'Great for analysis',
+    geoSection: 'Geofence Reminder', geoTitle: 'Auto-remind at office', geoSub: 'Prompt to start when you arrive',
+    geoRadius: 'Detection Radius', geoNotSet: 'Office location not set', geoSet: 'Office set', geoLocating: 'Locating...',
+    saveLocBtn: '📍 Set current location as office', updateLocBtn: '📍 Update office location',
+    geoFail: 'Location failed. Check browser permissions.', geoUnsupported: 'Geolocation not supported',
+    geoReminderTitle: "You're near the office", geoReminderSub: 'Want to start tracking?',
+    geoDismiss: 'Later', geoStart: 'Start Tracking',
+    aboutLabel: 'About', aboutTitle: 'Flow Time Tracker',
+    aboutDesc: 'Data stored locally. Nothing is uploaded.<br>Cross-device sync coming soon.',
+    tabTimer: 'Timer', tabHistory: 'History', tabExport: 'Export', tabSettings: 'Settings',
+    modalTitle: 'New Project', projNamePH: 'Project name, e.g. Product Design · Sprint 5',
+    projSubPH: 'Note (optional), e.g. UI/UX iteration', projRatePH: 'Hourly rate (optional), e.g. 120',
+    cancel: 'Cancel', add: 'Add',
+    pickerTitle: 'Set Start Time', confirm: 'Confirm',
+    reportTitle: 'Time Report', reportGenerated: 'Generated by Flow',
+    summarySheet: 'Summary', detailSheet: 'Details',
+    exportTime: 'Export time', exportRange2: 'Range',
+    colProject: 'Project', colDate: 'Date', colDuration: 'Duration', colHours: 'Hours', colRate: 'Rate ($/h)', colAmount: 'Amount ($)',
+    total: 'Total', days: ' days', perDay: 'avg/day',
+    weeks: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    ranges: { today:'Today', week:'This Week', month:'This Month', all:'All Time' },
+  }
+};
+
+let lang = localStorage.getItem('flow_lang') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
+
+function t(key) { return STRINGS[lang][key] || STRINGS['zh'][key] || key; }
+function ranges() { return STRINGS[lang].ranges; }
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('flow_lang', l);
+  applyLang();
+}
+
+function applyLang() {
+  document.title = t('title');
+  document.getElementById('langZH').style.background = lang==='zh' ? 'var(--ink)' : 'transparent';
+  document.getElementById('langZH').style.color = lang==='zh' ? 'var(--sand)' : 'var(--ink-muted)';
+  document.getElementById('langEN').style.background = lang==='en' ? 'var(--ink)' : 'transparent';
+  document.getElementById('langEN').style.color = lang==='en' ? 'var(--sand)' : 'var(--ink-muted)';
+
+  const map = {
+    startHint: 'startHint', backfillBtn: 'backfillBtn',
+    timerLabel: 'netHours', todayNet: 'todayNet',
+    'tab-timer-label': 'tabTimer', 'tab-history-label': 'tabHistory',
+    'tab-export-label': 'tabExport', 'tab-settings-label': 'tabSettings',
+  };
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (STRINGS[lang][key] !== undefined) {
+      if (el.tagName === 'INPUT') el.placeholder = t(key);
+      else el.innerHTML = t(key);
+    }
+  });
+
+  // Placeholders
+  document.getElementById('projNameInput').placeholder = t('projNamePH');
+  document.getElementById('projSubInput').placeholder = t('projSubPH');
+  document.getElementById('projRateInput').placeholder = t('projRatePH');
+
+  const np = document.getElementById('newProjBtn');
+  if (np) np.title = t('modalTitle');
+
+  updateDateLine();
+  applyState();
+  renderGeoSettings();
+  renderExportPreview();
+}
+
+function updateDateLine() {
+  const d = new Date();
+  const weeks = t('weeks');
+  if (lang === 'zh') {
+    document.getElementById('dateLine').textContent = `${d.getMonth()+1}月${d.getDate()}日 ${weeks[d.getDay()]}`;  // zh branch
+  } else {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('dateLine').textContent = `${weeks[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────
+document.getElementById('projNameInput').addEventListener('keydown', e => { if (e.key==='Enter') addProject(); });
+
+load();
+renderProjects();
+applyLang();
+
+if (state === S.RUNNING || state === S.BREAK) {
+  clearInterval(tickInterval);
+  tickInterval = setInterval(tick, 1000);
+}
+
+const _geoPrefs = loadGeoPrefs();
+if (_geoPrefs.enabled && _geoPrefs.lat) startGeoWatch();
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && (state === S.RUNNING || state === S.BREAK)) tick();
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/FLOW/sw.js');
+}
+</script>
+</body>
+</html>
