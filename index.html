@@ -364,7 +364,7 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
   <div class="page active" id="page-timer">
 
     <div class="project-bar">
-      <select class="project-select" id="projectSelect"></select>
+      <select class="project-select" id="projectSelect" onchange="onProjectSelectChange(this)"></select>
       <button class="btn-new-proj" onclick="openModal()" id="newProjBtn">+</button>
     </div>
 
@@ -583,6 +583,33 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
   </div>
 </div>
 
+<!-- EDIT HISTORY MODAL -->
+<div class="modal-overlay" id="editOverlay" onclick="closeEditOutside(event)">
+  <div class="modal">
+    <h3 data-i18n="editTitle">编辑记录</h3>
+    <input type="hidden" id="editIdx">
+    <input type="text" id="editProject" placeholder="项目名称">
+    <div style="display:flex;gap:8px;">
+      <input type="date" id="editDate" style="flex:1;">
+      <input type="time" id="editStartTime" style="flex:1;" placeholder="开始时间">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input type="number" id="editHours" min="0" max="23" placeholder="小时" style="flex:1;text-align:center;">
+      <span style="color:var(--ink-muted);font-size:13px;">h</span>
+      <input type="number" id="editMins" min="0" max="59" placeholder="分钟" style="flex:1;text-align:center;">
+      <span style="color:var(--ink-muted);font-size:13px;">m</span>
+    </div>
+    <div style="position:relative;">
+      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--ink-muted);">$</span>
+      <input type="number" id="editRate" min="0" placeholder="时薪（可选）" style="padding-left:26px;">
+    </div>
+    <div class="modal-btns">
+      <button onclick="closeEdit()" data-i18n="cancel">取消</button>
+      <button class="btn-confirm" onclick="saveEdit()" data-i18n="save">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD PROJECT MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal">
@@ -663,14 +690,7 @@ function load() {
 function loadProjects() {
   const raw = localStorage.getItem('flow_projects');
   if (raw) return JSON.parse(raw);
-  const defaults = [
-    { name:'产品设计 · Sprint 4', sub:'UI/UX 迭代' },
-    { name:'客户沟通', sub:'需求讨论 / 演示' },
-    { name:'代码审查', sub:'PR Review' },
-    { name:'内部运营', sub:'文档 / 会议' },
-  ];
-  localStorage.setItem('flow_projects', JSON.stringify(defaults));
-  return defaults;
+  return [];
 }
 
 function saveProjects(projects) {
@@ -739,14 +759,15 @@ function renderHistory() {
   const el = document.getElementById('historyList');
   if (!h.length) { el.innerHTML=`<div class="empty-hint">${t('noHistory')}</div>`; return; }
   el.innerHTML = h.map((item, i) => `
-    <div class="history-item">
+    <div class="history-item" onclick="openEdit(${i})" style="cursor:pointer;">
       <div class="h-left">
         <div class="h-proj">${item.project}</div>
         <div class="h-date">${item.dateStr}</div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <span class="h-dur">${item.duration}</span>
-        <button onclick="deleteHistory(${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-muted);padding:4px;border-radius:6px;line-height:1;transition:all 0.15s;" onmouseover="this.style.color='#c0392b';this.style.background='rgba(192,57,43,0.08)'" onmouseout="this.style.color='var(--ink-muted)';this.style.background='none'">✕</button>
+        <span style="font-size:11px;color:var(--ink-muted);opacity:0.5;">✎</span>
+        <button onclick="event.stopPropagation();deleteHistory(${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-muted);padding:4px;border-radius:6px;line-height:1;transition:all 0.15s;" onmouseover="this.style.color='#c0392b';this.style.background='rgba(192,57,43,0.08)'" onmouseout="this.style.color='var(--ink-muted)';this.style.background='none'">✕</button>
       </div>
     </div>
   `).join('');
@@ -759,10 +780,84 @@ function deleteHistory(idx) {
   renderHistory();
 }
 
+function openEdit(idx) {
+  const h = loadHistory();
+  const item = h[idx];
+  if (!item) return;
+
+  document.getElementById('editIdx').value = idx;
+  document.getElementById('editProject').value = item.project || '';
+  document.getElementById('editRate').value = item.rate || '';
+
+  // Parse date from dateStr or ts
+  const d = item.ts ? new Date(item.ts) : new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  document.getElementById('editDate').value = `${yyyy}-${mm}-${dd}`;
+  document.getElementById('editStartTime').value = pad(d.getHours())+':'+pad(d.getMinutes());
+
+  // Parse duration ms into h/m
+  const totalMin = Math.floor((item.ms||0) / 60000);
+  document.getElementById('editHours').value = Math.floor(totalMin / 60);
+  document.getElementById('editMins').value = totalMin % 60;
+
+  document.getElementById('editOverlay').classList.add('open');
+}
+
+function closeEdit() {
+  document.getElementById('editOverlay').classList.remove('open');
+}
+
+function closeEditOutside(e) {
+  if (e.target === document.getElementById('editOverlay')) closeEdit();
+}
+
+function saveEdit() {
+  const idx = parseInt(document.getElementById('editIdx').value);
+  const h = loadHistory();
+  if (!h[idx]) return;
+
+  const project = document.getElementById('editProject').value.trim() || h[idx].project;
+  const rate = parseFloat(document.getElementById('editRate').value) || 0;
+  const hours = parseInt(document.getElementById('editHours').value) || 0;
+  const mins = parseInt(document.getElementById('editMins').value) || 0;
+  const ms = (hours * 60 + mins) * 60000;
+
+  // Reconstruct ts from date + time inputs
+  const dateVal = document.getElementById('editDate').value;
+  const timeVal = document.getElementById('editStartTime').value;
+  let ts = h[idx].ts;
+  if (dateVal) {
+    const [y,mo,dy] = dateVal.split('-').map(Number);
+    const [hh,mm2] = timeVal ? timeVal.split(':').map(Number) : [0,0];
+    ts = new Date(y, mo-1, dy, hh, mm2).getTime();
+  }
+
+  // Rebuild dateStr
+  const d = new Date(ts);
+  const dateStr = lang==='zh'
+    ? `${d.getMonth()+1}月${d.getDate()}日`
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getDate();
+
+  // Rebuild duration string
+  const totalSec = Math.floor(ms/1000);
+  const duration = pad(Math.floor(totalSec/3600))+':'+pad(Math.floor((totalSec%3600)/60))+':'+pad(totalSec%60);
+
+  h[idx] = { ...h[idx], project, rate, ms, duration, dateStr, ts };
+  localStorage.setItem('flow_history', JSON.stringify(h));
+  closeEdit();
+  renderHistory();
+}
+
 function renderProjects() {
   const projects = loadProjects();
   const sel = document.getElementById('projectSelect');
   const cur = sel.value;
+  if (!projects.length) {
+    sel.innerHTML = `<option value="">${lang==='zh' ? '+ 新增项目' : '+ Add a project'}</option>`;
+    return;
+  }
   sel.innerHTML = projects.map((p,i) =>
     `<option value="${i}">${p.name}</option>`
   ).join('');
@@ -1006,6 +1101,10 @@ function resetAll() {
 }
 
 // ─── PROJECTS ────────────────────────────────────────
+function onProjectSelectChange(sel) {
+  if (sel.value === '') openModal();
+}
+
 function openModal() {
   document.getElementById('modalOverlay').classList.add('open');
   document.getElementById('projNameInput').focus();
@@ -1407,7 +1506,8 @@ const STRINGS = {
     tabTimer: '计时', tabHistory: '记录', tabExport: '导出', tabSettings: '设置',
     modalTitle: '新增项目', projNamePH: '项目名称，如：产品设计 · Sprint 5',
     projSubPH: '备注（可选），如：UI/UX 迭代', projRatePH: '时薪（可选），如：300',
-    cancel: '取消', add: '添加',
+    cancel: '取消', add: '添加', save: '保存',
+    editTitle: '编辑记录',
     pickerTitle: '补录开始时间', confirm: '确认',
     reportTitle: '工时报告', reportGenerated: '由 Flow 自动生成',
     summarySheet: '摘要', detailSheet: '明细',
@@ -1446,7 +1546,8 @@ const STRINGS = {
     tabTimer: 'Timer', tabHistory: 'History', tabExport: 'Export', tabSettings: 'Settings',
     modalTitle: 'New Project', projNamePH: 'Project name, e.g. Product Design · Sprint 5',
     projSubPH: 'Note (optional), e.g. UI/UX iteration', projRatePH: 'Hourly rate (optional), e.g. 120',
-    cancel: 'Cancel', add: 'Add',
+    cancel: 'Cancel', add: 'Add', save: 'Save',
+    editTitle: 'Edit Record',
     pickerTitle: 'Set Start Time', confirm: 'Confirm',
     reportTitle: 'Time Report', reportGenerated: 'Generated by Flow',
     summarySheet: 'Summary', detailSheet: 'Details',
