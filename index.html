@@ -672,8 +672,9 @@ let tickInterval = null;
 // ─── STORAGE ─────────────────────────────────────────
 function save() {
   const selIdx = document.getElementById('projectSelect')?.value || '0';
+  localStorage.setItem('flow_selected_project', selIdx);
   localStorage.setItem('flow_state', JSON.stringify({
-    state, workStartTs, breakStartTs, sessions, selectedProject: selIdx
+    state, workStartTs, breakStartTs, sessions
   }));
 }
 
@@ -685,13 +686,6 @@ function load() {
     workStartTs = d.workStartTs;
     breakStartTs = d.breakStartTs;
     sessions = d.sessions || [];
-    // Restore selected project after renderProjects runs
-    if (d.selectedProject !== undefined) {
-      setTimeout(() => {
-        const sel = document.getElementById('projectSelect');
-        if (sel) sel.value = d.selectedProject;
-      }, 0);
-    }
   } catch(e) {}
 }
 
@@ -861,7 +855,6 @@ function saveEdit() {
 function renderProjects() {
   const projects = loadProjects();
   const sel = document.getElementById('projectSelect');
-  const cur = sel.value;
   if (!projects.length) {
     sel.innerHTML = `<option value="">${lang==='zh' ? '+ 新增项目' : '+ Add a project'}</option>`;
     return;
@@ -869,7 +862,11 @@ function renderProjects() {
   sel.innerHTML = projects.map((p,i) =>
     `<option value="${i}">${p.name}</option>`
   ).join('');
-  if (cur) sel.value = cur;
+  // Always restore from saved value
+  const saved = localStorage.getItem('flow_selected_project');
+  if (saved !== null && sel.options[saved]) {
+    sel.value = saved;
+  }
 }
 
 function setStatus(cls, text) {
