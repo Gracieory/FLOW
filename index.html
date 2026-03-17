@@ -1563,83 +1563,80 @@ async function exportPDF() {
   const totalAmount = items.reduce((a,b)=>a+(b.rate?(b.ms/3600000)*b.rate:0),0);
   const hasRate = items.some(i=>i.rate>0);
 
-  const rows = items.map((item,i) => {
-    const amt = item.rate ? '$'+Math.round((item.ms/3600000)*item.rate).toLocaleString() : '—';
-    return `<tr style="background:${i%2===0?'#fafaf8':'#fff'}">
-      <td style="padding:8px 10px;border-bottom:0.5px solid #E0DBD3;">${item.project}</td>
-      <td style="padding:8px 10px;border-bottom:0.5px solid #E0DBD3;">${item.dateStr}</td>
-      <td style="padding:8px 10px;border-bottom:0.5px solid #E0DBD3;font-family:monospace">${item.duration}</td>
-      ${hasRate ? `<td style="padding:8px 10px;border-bottom:0.5px solid #E0DBD3;color:#3d6b3d;font-weight:500">${amt}</td>` : ''}
-    </tr>`;
-  }).join('');
-
   const dateStr = lang==='zh'
     ? now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日'
     : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]+' '+now.getDate()+', '+now.getFullYear();
 
-  // Build in-app overlay (no new window — works reliably on iOS Safari)
-  const existing = document.getElementById('pdfOverlay');
-  if (existing) existing.remove();
+  const rows = items.map((item,i) => {
+    const amt = item.rate ? '$'+Math.round((item.ms/3600000)*item.rate).toLocaleString() : '';
+    return `<tr class="${i%2===0?'even':''}">
+      <td>${item.project}</td>
+      <td>${item.dateStr}</td>
+      <td class="mono">${item.duration}</td>
+      ${hasRate ? `<td class="mono green">${amt||'—'}</td>` : ''}
+    </tr>`;
+  }).join('');
 
-  const overlay = document.createElement('div');
-  overlay.id = 'pdfOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  const html = `<!DOCTYPE html><html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flow 工时报告</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,sans-serif;color:#2C2720;background:#fff;padding:20px 16px 40px;}
+.header{background:#F5F2ED;padding:14px 16px;border-radius:10px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;}
+.header-left p{font-size:9px;color:#7A7269;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+.header-left h1{font-size:20px;font-weight:500;}
+.header-right{font-size:11px;color:#7A7269;text-align:right;}
+.stats{display:grid;grid-template-columns:repeat(${hasRate?4:3},1fr);gap:8px;margin-bottom:16px;}
+.stat{background:#F5F2ED;border-radius:8px;padding:10px 12px;}
+.stat label{font-size:9px;color:#7A7269;display:block;margin-bottom:5px;}
+.stat span{font-size:16px;font-weight:500;font-family:monospace;}
+.stat.green span{color:#3d6b3d;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:#E8E3DA;}
+th{padding:8px 10px;text-align:left;font-size:10px;color:#7A7269;font-weight:500;}
+td{padding:9px 10px;border-bottom:.5px solid #E0DBD3;}
+tr.even td{background:#FAFAF8;}
+.mono{font-family:monospace;}
+.green{color:#3d6b3d;font-weight:500;}
+tfoot tr td{background:#E8E3DA;font-weight:500;padding:8px 10px;}
+.footer{margin-top:16px;padding-top:10px;border-top:.5px solid #E0DBD3;display:flex;justify-content:space-between;font-size:10px;color:#7A7269;}
+@media print{@page{size:auto;margin:8mm 6mm;}body{padding:0;}}
+</style>
+</head><body>
+<div class="header">
+  <div class="header-left">
+    <p>FLOW · ${lang==='zh'?'工时报告':'TIME REPORT'}</p>
+    <h1>${ranges()[currentRange]} ${lang==='zh'?'工时报告':'Report'}</h1>
+  </div>
+  <div class="header-right">${dateStr}</div>
+</div>
+<div class="stats">
+  <div class="stat"><label>${t('statTotal')}</label><span>${msToHours(totalMs)}h</span></div>
+  <div class="stat"><label>${t('statDays')}</label><span>${lang==='zh'?days+'天':days+(days===1?' day':' days')}</span></div>
+  <div class="stat"><label>${t('statAvg')}</label><span>${msToHours(avg)}h</span></div>
+  ${hasRate?`<div class="stat green"><label>${t('statAmount')}</label><span>$${Math.round(totalAmount).toLocaleString()}</span></div>`:''}
+</div>
+<table>
+  <thead><tr>
+    <th>${t('colProject')}</th>
+    <th>${t('colDate')}</th>
+    <th>${t('colDuration')}</th>
+    ${hasRate?`<th>${t('statAmount')}</th>`:''}
+  </tr></thead>
+  <tbody>${rows}</tbody>
+  ${hasRate?`<tfoot><tr><td>${t('total')}</td><td></td><td class="mono">${msToHours(totalMs)}h</td><td class="mono green">$${Math.round(totalAmount).toLocaleString()}</td></tr></tfoot>`:''}
+</table>
+<div class="footer">
+  <span>${t('reportGenerated')}</span>
+  <span>gracieory.github.io/FLOW/</span>
+</div>
+</body></html>`;
 
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#fff;display:flex;flex-direction:column;';
-
-  const scrollArea = document.createElement('div');
-  scrollArea.style.cssText = 'flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 16px 24px;font-family:"DM Sans",sans-serif;color:#2C2720;';
-
-  scrollArea.innerHTML = `
-      <div style="background:#F5F2ED;padding:12px 16px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end;">
-        <div>
-          <p style="font-size:9px;color:#7A7269;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">${t('reportHeader')}</p>
-          <h1 style="font-size:17px;font-weight:500;">${ranges()[currentRange]} ${lang==='zh'?'工时报告':'Report'}</h1>
-        </div>
-        <p style="font-size:11px;color:#7A7269;">${dateStr}</p>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(${hasRate?4:3},1fr);gap:8px;margin-bottom:14px;">
-        <div style="background:#F5F2ED;border-radius:6px;padding:10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statTotal')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;">${msToHours(totalMs)}h</span></div>
-        <div style="background:#F5F2ED;border-radius:6px;padding:10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statDays')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;">${lang==='zh'?days+'天':days+(days===1?' day':' days')}</span></div>
-        <div style="background:#F5F2ED;border-radius:6px;padding:10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statAvg')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;">${msToHours(avg)}h</span></div>
-        ${hasRate?`<div style="background:#F5F2ED;border-radius:6px;padding:10px;"><p style="font-size:9px;color:#7A7269;margin-bottom:3px;">${t('statAmount')}</p><span style="font-size:14px;font-weight:500;font-family:monospace;color:#3d6b3d;">$${Math.round(totalAmount).toLocaleString()}</span></div>`:''}
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead><tr style="background:#E8E3DA;">
-          <th style="padding:7px 8px;text-align:left;font-size:10px;color:#7A7269;font-weight:500;">${t('colProject')}</th>
-          <th style="padding:7px 8px;text-align:left;font-size:10px;color:#7A7269;font-weight:500;">${t('colDate')}</th>
-          <th style="padding:7px 8px;text-align:left;font-size:10px;color:#7A7269;font-weight:500;">${t('colDuration')}</th>
-          ${hasRate?`<th style="padding:7px 8px;text-align:left;font-size:10px;color:#7A7269;font-weight:500;">${t('statAmount')}</th>`:''}
-        </tr></thead>
-        <tbody>${rows}</tbody>
-        ${hasRate?`<tfoot><tr style="background:#E8E3DA;"><td style="padding:7px 8px;font-weight:500;">${t('total')}</td><td></td><td style="padding:7px 8px;font-family:monospace;font-weight:500;">${msToHours(totalMs)}h</td><td style="padding:7px 8px;color:#3d6b3d;font-weight:500;">$${Math.round(totalAmount).toLocaleString()}</td></tr></tfoot>`:''}
-      </table>
-      <div style="margin-top:14px;padding-top:10px;border-top:0.5px solid #E0DBD3;display:flex;justify-content:space-between;font-size:10px;color:#7A7269;">
-        <span>${t('reportGenerated')}</span><span>gracieory.github.io/FLOW/</span>
-      </div>`;
-
-  const btnBar = document.createElement('div');
-  btnBar.style.cssText = 'flex-shrink:0;background:#fff;border-top:0.5px solid #E0DBD3;padding:12px 16px 28px;display:flex;gap:10px;';
-  btnBar.innerHTML = `
-    <button onclick="closePdfOverlay()" style="flex:1;padding:13px;border-radius:14px;border:0.5px solid #E0DBD3;background:#F5F2ED;color:#7A7269;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">${lang==='zh'?'关闭':'Close'}</button>
-    <button onclick="doPrint()" style="flex:2;padding:13px;border-radius:14px;border:none;background:#2C2720;color:#F5F2ED;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">${lang==='zh'?'打印 / 存为 PDF':'Print / Save PDF'}</button>`;
-
-  overlay.appendChild(scrollArea);
-  overlay.appendChild(btnBar);
-  document.body.appendChild(overlay);
-}
-
-function doPrint() {
-  window.onafterprint = () => {
-    window.onafterprint = null;
-    closePdfOverlay();
-  };
-  window.print();
-}
-
-function closePdfOverlay() {
-  const overlay = document.getElementById('pdfOverlay');
-  if (overlay) overlay.remove();
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
 }
 
 
