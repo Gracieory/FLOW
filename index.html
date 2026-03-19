@@ -1535,6 +1535,19 @@ function startGeoWatch() {
       const distStr = Math.round(dist) + 'm';
       document.getElementById('geoReminderSub').textContent = lang==='zh' ? `距离办公室 ${distStr}，要开始记录工时吗？` : `You're ${distStr} from the office. Start tracking?`;
       document.getElementById('geoReminder').style.display = 'block';
+
+      // Vibrate
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+
+      // System notification banner
+      if (Notification.permission === 'granted') {
+        const n = new Notification(lang==='zh' ? '你已到达办公室附近 📍' : "You're near the office 📍", {
+          body: lang==='zh' ? `距离办公室 ${distStr}，要开始记录工时吗？` : `${distStr} from office. Start tracking?`,
+          icon: '/icon-192.png',
+          tag: 'geo-reminder'
+        });
+        n.onclick = () => { startFromReminder(); n.close(); };
+      }
     }
   }, null, { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 });
 }
