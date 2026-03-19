@@ -2,17 +2,99 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Flow · Time Tracker</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2C2720">
+<meta name="theme-color" content="#F5F2ED">
+<meta name="background-color" content="#F5F2ED">
+
+<!-- iOS -->
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Flow">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-startup-image" href="icon-512.png">
+
+<!-- Android / Chrome -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Flow">
+
+<!-- Windows -->
+<meta name="msapplication-TileImage" content="icon-192.png">
+<meta name="msapplication-TileColor" content="#F5F2ED">
+<meta name="msapplication-tap-highlight" content="no">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* Cross-platform reset */
+* {
+  box-sizing: border-box; margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Force consistent font rendering on Android */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent Android from inflating font sizes */
+body {
+  font-size: 16px;
+  text-rendering: optimizeLegibility;
+}
+
+/* Consistent input/select/button styling across platforms */
+input, select, button, textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+}
+
+/* Consistent scrolling on Android */
+.modal, .session-list, .history-section, #previewRows {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Fix Android animation performance */
+.ring, .ring-inner, .break-banner, .finished-card,
+.status-pill, .btn, .modal, .modal-overlay {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Ensure animations run smoothly on Android */
+@keyframes breathe {
+  0%,100% { box-shadow: 0 0 0 0 rgba(107,143,107,0); }
+  50% { box-shadow: 0 0 0 14px rgba(107,143,107,0.08); }
+}
+@keyframes blink {
+  0%,100%{ opacity:1 } 50%{ opacity:0.35 }
+}
+
+/* Android Chrome: ensure bottom tab bar sits above nav */
+.tab-bar {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Android: fix select arrow */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237A7269'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+/* Wheel picker on Android */
+.wheel-col {
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: y mandatory;
+}
 
 :root {
   --ink: #2C2720;
