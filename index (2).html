@@ -568,6 +568,31 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
         </div>
       </div>
 
+      <!-- BACKUP & RESTORE -->
+      <div style="margin-bottom:2rem;">
+        <p class="section-label" style="margin-bottom:12px;">数据备份与恢复</p>
+        <div style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);overflow:hidden;">
+
+          <!-- Export -->
+          <div style="padding:14px 16px;border-bottom:0.5px solid var(--divider);">
+            <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:3px;">导出备份</div>
+            <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px;">将所有数据复制到剪贴板，可保存到备忘录</div>
+            <button onclick="backupData()" style="width:100%;padding:11px;border-radius:12px;border:none;background:var(--ink);color:var(--sand);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">📤 导出全部数据</button>
+            <div id="backupStatus" style="display:none;margin-top:8px;padding:8px 12px;border-radius:10px;font-size:12px;"></div>
+          </div>
+
+          <!-- Import -->
+          <div style="padding:14px 16px;">
+            <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:3px;">恢复备份</div>
+            <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px;">粘贴之前导出的备份数据</div>
+            <textarea id="restoreInput" placeholder="粘贴备份数据..." style="width:100%;height:80px;padding:10px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:11px;resize:none;-webkit-appearance:none;"></textarea>
+            <button onclick="restoreData()" style="width:100%;margin-top:8px;padding:11px;border-radius:12px;border:none;background:var(--pulse);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">📥 恢复数据</button>
+            <div id="restoreStatus" style="display:none;margin-top:8px;padding:8px 12px;border-radius:10px;font-size:12px;"></div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1353,6 +1378,86 @@ function addProject() {
 }
 
 // ─── TABS ─────────────────────────────────────────────
+// ─── BACKUP & RESTORE ────────────────────────────────
+const BACKUP_KEYS = ['flow_history','flow_projects','flow_state','flow_selected_project','flow_trash','flow_lang','flow_geo'];
+
+function backupData() {
+  const data = {};
+  let count = 0;
+  BACKUP_KEYS.forEach(k => {
+    const v = localStorage.getItem(k);
+    if (v) { data[k] = v; count++; }
+  });
+  if (count === 0) {
+    showBackupStatus('backupStatus', 'error', '没有找到任何数据');
+    return;
+  }
+  const json = JSON.stringify(data);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json).then(() => {
+      const hist = data['flow_history'] ? JSON.parse(data['flow_history']).length : 0;
+      showBackupStatus('backupStatus', 'success', `✅ 已复制到剪贴板！共 ${hist} 条记录。可粘贴到备忘录保存。`);
+    }).catch(() => showBackupFallback(json));
+  } else {
+    showBackupFallback(json);
+  }
+}
+
+function showBackupFallback(json) {
+  const ta = document.getElementById('restoreInput');
+  ta.value = json;
+  ta.select();
+  showBackupStatus('backupStatus', 'info', '请长按下方文字框全选后手动复制');
+}
+
+function restoreData() {
+  const input = document.getElementById('restoreInput').value.trim();
+  if (!input) {
+    showBackupStatus('restoreStatus', 'error', '请先粘贴备份数据');
+    return;
+  }
+  let data;
+  try { data = JSON.parse(input); } catch(e) {
+    showBackupStatus('restoreStatus', 'error', '数据格式不对，请重新复制粘贴');
+    return;
+  }
+  let count = 0; let histCount = 0;
+  BACKUP_KEYS.forEach(k => {
+    if (data[k]) {
+      localStorage.setItem(k, data[k]);
+      count++;
+      if (k === 'flow_history') {
+        try { histCount = JSON.parse(data[k]).length; } catch(e) {}
+      }
+    }
+  });
+  if (count === 0) {
+    showBackupStatus('restoreStatus', 'error', '没有找到可恢复的数据');
+    return;
+  }
+  showBackupStatus('restoreStatus', 'success', `✅ 恢复成功！${histCount} 条历史记录已还原。`);
+  setTimeout(() => {
+    renderHistory();
+    renderTrash();
+    renderProjects();
+    load();
+    applyState();
+  }, 300);
+}
+
+function showBackupStatus(id, type, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const colors = {
+    success: { bg:'rgba(107,143,107,0.1)', color:'#3d6b3d', border:'rgba(107,143,107,0.3)' },
+    error:   { bg:'rgba(192,57,43,0.08)', color:'#c0392b', border:'rgba(192,57,43,0.2)' },
+    info:    { bg:'rgba(44,39,32,0.05)',  color:'#2C2720', border:'#E0DBD3' },
+  };
+  const c = colors[type] || colors.info;
+  el.style.cssText = `display:block;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.6;background:${c.bg};color:${c.color};border:0.5px solid ${c.border};`;
+  el.textContent = msg;
+}
+
 function switchTab(tab) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
