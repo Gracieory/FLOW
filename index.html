@@ -1340,6 +1340,10 @@ function endWork() {
   saveHistory({ project: projName, dateStr: fmtDate(Date.now()), duration: fmtDuration(net), ms: net, ts: Date.now(), rate });
 
   applyState(); save();
+  // Reset timer display to 0 after a short delay
+  setTimeout(() => {
+    document.getElementById('timerDisplay').textContent = '00:00:00';
+  }, 100);
 }
 
 function resetAll() {
@@ -1637,7 +1641,7 @@ function selectRange(btn) {
 function getFilteredHistory() {
   const all = loadHistory();
   const now = new Date();
-  return all.filter(item => {
+  const filtered = all.filter(item => {
     const d = new Date(item.ts || Date.now());
     if (currentRange === 'today') {
       return d.toDateString() === now.toDateString();
@@ -1649,6 +1653,8 @@ function getFilteredHistory() {
     }
     return true;
   });
+  // Sort by date ascending (oldest first)
+  return filtered.sort((a, b) => (a.ts || 0) - (b.ts || 0));
 }
 
 function msToHours(ms) { return (ms / 3600000).toFixed(1); }
