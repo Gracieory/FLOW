@@ -1244,7 +1244,7 @@ function openTimePicker() {
   const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
   const m = now.getMinutes();
 
-  const hours = ['12','1','2','3','4','5','6','7','8','9','10','11'];
+  const hours = ['1','2','3','4','5','6','7','8','9','10','11','12'];
   const mins = Array.from({length:60}, (_,i) => String(i).padStart(2,'0'));
   const ampm = ['AM','PM'];
 
@@ -1252,12 +1252,12 @@ function openTimePicker() {
   const minEl = document.getElementById('wheelMin');
   const ampmEl = document.getElementById('wheelAmpm');
 
-  buildWheel(hourEl, hours, h12 === 12 ? 0 : h12);
+  buildWheel(hourEl, hours, h12 === 12 ? 11 : h12 - 1);
   buildWheel(minEl, mins, m);
   buildWheel(ampmEl, ampm, isPM ? 1 : 0);
 
   requestAnimationFrame(() => {
-    scrollToIdx(hourEl, h12 === 12 ? 0 : h12);
+    scrollToIdx(hourEl, h12 === 12 ? 11 : h12 - 1);
     scrollToIdx(minEl, m);
     scrollToIdx(ampmEl, isPM ? 1 : 0);
   });
@@ -1278,7 +1278,7 @@ function closeTimePickerOutside(e) {
 }
 
 function confirmTimePicker() {
-  const hours = ['12','1','2','3','4','5','6','7','8','9','10','11'];
+  const hours = ['1','2','3','4','5','6','7','8','9','10','11','12'];
   const hIdx = getSelectedIdx(document.getElementById('wheelHour'));
   const mIdx = getSelectedIdx(document.getElementById('wheelMin'));
   const apIdx = getSelectedIdx(document.getElementById('wheelAmpm'));
