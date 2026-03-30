@@ -1523,8 +1523,13 @@ function toggleGeo() {
   prefs.enabled = enabled;
   saveGeoPrefs(prefs);
 
-  if (enabled) startGeoWatch();
-  else stopGeoWatch();
+  if (enabled) {
+    startGeoWatch();
+    // 开启地理围栏时同时请求通知权限
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  } else stopGeoWatch();
 }
 
 function selectRadius(btn) {
@@ -1580,6 +1585,27 @@ function startGeoWatch() {
       const distStr = Math.round(dist) + 'm';
       document.getElementById('geoReminderSub').textContent = lang==='zh' ? `距离办公室 ${distStr}，要开始记录工时吗？` : `You're ${distStr} from the office. Start tracking?`;
       document.getElementById('geoReminder').style.display = 'block';
+
+      // 震动
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
+
+      // 锁屏通知
+      const geoTitle = lang==='zh' ? '你已到达办公室附近 📍' : "You're near the office 📍";
+      const geoBody  = lang==='zh' ? `距离办公室 ${distStr}，要开始记录工时吗？` : `${distStr} from office. Start tracking?`;
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(geoTitle, {
+            body: geoBody,
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            vibrate: [300, 100, 300, 100, 500],
+            tag: 'geo-reminder',
+            requireInteraction: true
+          });
+        });
+      } else if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(geoTitle, { body: geoBody, icon: '/icon-192.png', tag: 'geo-reminder' });
+      }
     }
   }, null, { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 });
 }
