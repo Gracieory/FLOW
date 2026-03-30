@@ -662,14 +662,14 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
     <h3>补录工时记录</h3>
     <select id="manualProject" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;margin-bottom:8px;-webkit-appearance:none;appearance:none;"></select>
     <input type="date" id="manualDate" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;margin-bottom:8px;">
-    <div style="display:flex;gap:8px;margin-bottom:8px;">
-      <div style="flex:1;">
+    <div style="display:flex;gap:8px;margin-bottom:8px;width:100%;">
+      <div style="flex:1;min-width:0;">
         <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;letter-spacing:0.06em;">开始时间</div>
-        <input type="time" id="manualStart" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:14px;">
+        <input type="time" id="manualStart" style="width:100%;min-width:0;padding:9px 8px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:13px;-webkit-appearance:none;appearance:none;">
       </div>
-      <div style="flex:1;">
+      <div style="flex:1;min-width:0;">
         <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;letter-spacing:0.06em;">结束时间</div>
-        <input type="time" id="manualEnd" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:14px;">
+        <input type="time" id="manualEnd" style="width:100%;min-width:0;padding:9px 8px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:13px;-webkit-appearance:none;appearance:none;">
       </div>
     </div>
     <div id="manualCalc" style="background:rgba(107,143,107,0.08);border:0.5px solid rgba(107,143,107,0.3);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
@@ -835,8 +835,10 @@ function renderHistory() {
   const h = loadHistory();
   const el = document.getElementById('historyList');
   if (!h.length) { el.innerHTML=`<div class="empty-hint">${t('noHistory')}</div>`; return; }
-  el.innerHTML = h.map((item, i) => `
-    <div class="history-item" onclick="openEdit(${i})" style="cursor:pointer;">
+  // Sort by date ascending
+  const sorted = [...h].sort((a,b) => (a.ts||0) - (b.ts||0));
+  el.innerHTML = sorted.map((item) => `
+    <div class="history-item" onclick="openEditByTs(${item.ts})" style="cursor:pointer;">
       <div class="h-left">
         <div class="h-proj">${item.project}</div>
         <div class="h-date">${item.dateStr}</div>
@@ -844,10 +846,30 @@ function renderHistory() {
       <div style="display:flex;align-items:center;gap:10px;">
         <span class="h-dur">${item.duration}</span>
         <span style="font-size:11px;color:var(--ink-muted);opacity:0.5;">✎</span>
-        <button onclick="event.stopPropagation();deleteHistory(${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-muted);padding:4px;border-radius:6px;line-height:1;transition:all 0.15s;" onmouseover="this.style.color='#c0392b';this.style.background='rgba(192,57,43,0.08)'" onmouseout="this.style.color='var(--ink-muted)';this.style.background='none'">✕</button>
+        <button onclick="event.stopPropagation();deleteHistoryByTs(${item.ts})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-muted);padding:4px;border-radius:6px;line-height:1;transition:all 0.15s;" onmouseover="this.style.color='#c0392b';this.style.background='rgba(192,57,43,0.08)'" onmouseout="this.style.color='var(--ink-muted)';this.style.background='none'">✕</button>
       </div>
     </div>
   `).join('');
+}
+
+function deleteHistoryByTs(ts) {
+  const h = loadHistory();
+  const idx = h.findIndex(i => i.ts === ts);
+  if (idx === -1) return;
+  const deleted = h.splice(idx, 1)[0];
+  localStorage.setItem('flow_history', JSON.stringify(h));
+  deleted._deletedAt = Date.now();
+  const trash = loadTrash();
+  trash.unshift(deleted);
+  localStorage.setItem('flow_trash', JSON.stringify(trash.slice(0, 30)));
+  renderHistory();
+  renderTrash();
+}
+
+function openEditByTs(ts) {
+  const h = loadHistory();
+  const idx = h.findIndex(i => i.ts === ts);
+  if (idx !== -1) openEdit(idx);
 }
 
 function deleteHistory(idx) {
@@ -1653,8 +1675,33 @@ function getFilteredHistory() {
     }
     return true;
   });
-  // Sort by date ascending (oldest first)
-  return filtered.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  // Sort by date ascending (oldest first), use dateStr as fallback
+  return filtered.sort((a, b) => {
+    const tsA = a.ts || parseDateStr(a.dateStr);
+    const tsB = b.ts || parseDateStr(b.dateStr);
+    return tsA - tsB;
+  });
+}
+
+function parseDateStr(dateStr) {
+  if (!dateStr) return 0;
+  // Handle "3月10日" format
+  const zhMatch = dateStr.match(/(\d+)月(\d+)日/);
+  if (zhMatch) {
+    const now = new Date();
+    return new Date(now.getFullYear(), parseInt(zhMatch[1]) - 1, parseInt(zhMatch[2])).getTime();
+  }
+  // Handle "Mar 10" format
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const enMatch = dateStr.match(/([A-Za-z]+)\s+(\d+)/);
+  if (enMatch) {
+    const mo = months.indexOf(enMatch[1]);
+    if (mo >= 0) {
+      const now = new Date();
+      return new Date(now.getFullYear(), mo, parseInt(enMatch[2])).getTime();
+    }
+  }
+  return 0;
 }
 
 function msToHours(ms) { return (ms / 3600000).toFixed(1); }
