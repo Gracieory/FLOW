@@ -1599,38 +1599,65 @@ function getDistanceM(lat1, lng1, lat2, lng2) {
 function startGeoWatch() {
   if (!navigator.geolocation) return;
   stopGeoWatch();
+
+  // Track if user has left the office so we can remind again next arrival
+  let wasOutside = true;
+
   geoWatchId = navigator.geolocation.watchPosition(pos => {
     const prefs = loadGeoPrefs();
     if (!prefs.enabled || !prefs.lat || !prefs.lng) return;
-    if (state !== S.IDLE || geoReminderShown) return;
+    if (state !== S.IDLE) return;
 
     const dist = getDistanceM(pos.coords.latitude, pos.coords.longitude, prefs.lat, prefs.lng);
     const radius = prefs.radius || 200;
-    if (dist <= radius) {
-      geoReminderShown = true;
-      const distStr = Math.round(dist) + 'm';
-      document.getElementById('geoReminderSub').textContent = lang==='zh' ? `距离办公室 ${distStr}，要开始记录工时吗？` : `You're ${distStr} from the office. Start tracking?`;
-      document.getElementById('geoReminder').style.display = 'block';
 
-      // 震动
+    if (dist > radius * 1.5) {
+      // User is clearly outside — reset so we remind next time they arrive
+      wasOutside = true;
+      geoReminderShown = false;
+    }
+
+    if (dist <= radius && wasOutside && !geoReminderShown) {
+      wasOutside = false;
+      geoReminderShown = true;
+
+      // Vibrate
       if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 500]);
 
-      // 锁屏通知
       const geoTitle = lang==='zh' ? '你已到达办公室附近 📍' : "You're near the office 📍";
-      const geoBody  = lang==='zh' ? `距离办公室 ${distStr}，要开始记录工时吗？` : `${distStr} from office. Start tracking?`;
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification(geoTitle, {
-            body: geoBody,
-            icon: '/icon-192.png',
-            badge: '/icon-192.png',
-            vibrate: [300, 100, 300, 100, 500],
-            tag: 'geo-reminder',
-            requireInteraction: true
+      const geoBody  = lang==='zh' ? '要开始记录工时吗？点击打开 Flow' : 'Time to start tracking. Tap to open Flow';
+
+      if (Notification.permission === 'granted') {
+        // Already have permission — send notification directly, no in-app banner
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(geoTitle, {
+              body: geoBody,
+              icon: '/icon-192.png',
+              badge: '/icon-192.png',
+              vibrate: [300, 100, 300, 100, 500],
+              tag: 'geo-reminder',
+              requireInteraction: true
+            });
           });
+        } else {
+          new Notification(geoTitle, { body: geoBody, icon: '/icon-192.png', tag: 'geo-reminder' });
+        }
+      } else if (Notification.permission === 'default') {
+        // First time — ask for permission, then send notification
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') {
+            new Notification(geoTitle, { body: geoBody, icon: '/icon-192.png', tag: 'geo-reminder' });
+          } else {
+            // Denied — fall back to in-app banner
+            document.getElementById('geoReminderSub').textContent = lang==='zh' ? '要开始记录工时吗？' : 'Start tracking?';
+            document.getElementById('geoReminder').style.display = 'block';
+          }
         });
-      } else if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(geoTitle, { body: geoBody, icon: '/icon-192.png', tag: 'geo-reminder' });
+      } else {
+        // Notifications blocked — show in-app banner only
+        document.getElementById('geoReminderSub').textContent = lang==='zh' ? '要开始记录工时吗？' : 'Start tracking?';
+        document.getElementById('geoReminder').style.display = 'block';
       }
     }
   }, null, { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 });
@@ -2056,7 +2083,20 @@ document.addEventListener('visibilitychange', () => {
 });
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          // New version available - show update banner
+          const banner = document.createElement('div');
+          banner.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#2C2720;color:#F5F2ED;padding:10px 20px;border-radius:20px;font-size:13px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.2);white-space:nowrap;';
+          banner.innerHTML = `<span>🆕 有新版本</span><button onclick="window.location.reload()" style="background:var(--pulse);border:none;color:#fff;padding:5px 14px;border-radius:12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">立即更新</button>`;
+          document.body.appendChild(banner);
+        }
+      });
+    });
+  }).catch(() => {
     navigator.serviceWorker.register('/FLOW/sw.js');
   });
 }
