@@ -396,19 +396,9 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
 
     <div class="break-banner" id="breakBanner">
       <span style="font-size:18px">☕</span>
-      <div style="flex:1;">
+      <div>
         <div class="break-title" data-i18n="onBreak">休息中</div>
         <div class="break-sub" id="breakDurText"></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-        <select id="breakTimerSelect" onchange="setBreakTimer()" style="font-size:11px;padding:4px 6px;border-radius:8px;border:0.5px solid rgba(196,154,60,0.3);background:rgba(196,154,60,0.08);color:#7a5e1a;font-family:'DM Sans',sans-serif;cursor:pointer;-webkit-appearance:none;appearance:none;">
-          <option value="0">不提醒</option>
-          <option value="5">5 min</option>
-          <option value="10">10 min</option>
-          <option value="15">15 min</option>
-          <option value="30">30 min</option>
-        </select>
-        <span id="breakCountdown" style="font-family:'DM Mono',monospace;font-size:11px;color:#7a5e1a;min-width:32px;"></span>
       </div>
     </div>
 
@@ -434,19 +424,8 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
   <!-- PAGE: HISTORY -->
   <div class="page" id="page-history">
     <div class="history-section" style="margin-top:1rem">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <p class="section-label" data-i18n="historyLabel">历史记录</p>
-        <button onclick="openManualEntry()" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--pulse);background:none;border:0.5px solid rgba(107,143,107,0.4);border-radius:20px;padding:5px 12px;cursor:pointer;font-family:'DM Sans',sans-serif;">+ 补录记录</button>
-      </div>
+      <p class="section-label" style="margin-bottom:14px" data-i18n="historyLabel">历史记录</p>
       <div id="historyList"><div class="empty-hint" data-i18n="noHistory">暂无历史记录</div></div>
-
-      <div style="margin-top:1.5rem;padding-bottom:2rem;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <p class="section-label">最近删除</p>
-          <button onclick="clearTrash()" id="clearTrashBtn" style="font-size:11px;color:var(--ink-muted);background:none;border:none;cursor:pointer;padding:0;display:none;">全部清空</button>
-        </div>
-        <div id="trashList"><div class="empty-hint">无已删除记录</div></div>
-      </div>
     </div>
   </div>
 
@@ -556,6 +535,10 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
               <div id="geoStatus" style="font-size:12px;color:var(--ink-muted);margin-bottom:10px;" data-i18n="geoNotSet">尚未设置办公室位置</div>
               <button onclick="saveOfficeLocation()" style="padding:9px 18px;border-radius:20px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;width:100%;transition:all 0.18s;" id="saveLocBtn" data-i18n="saveLocBtn">📍 将当前位置设为办公室</button>
             </div>
+            <div id="geoNotifyBlock" style="padding:14px 16px;display:none;">
+              <div id="geoNotifyStatus" style="font-size:11px;color:var(--ink-muted);line-height:1.65;margin-bottom:10px;"></div>
+              <button type="button" id="geoNotifyBtn" onclick="manualRequestGeoNotify()" style="display:none;width:100%;padding:9px 14px;border-radius:12px;border:0.5px solid rgba(107,143,107,0.45);background:rgba(107,143,107,0.08);color:#3d6b3d;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;"></button>
+            </div>
           </div>
         </div>
       </div>
@@ -565,31 +548,6 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
         <div style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);padding:14px 16px;">
           <div style="font-size:13px;color:var(--ink);margin-bottom:4px;" data-i18n="aboutTitle">Flow 工时计时器</div>
           <div style="font-size:11px;color:var(--ink-muted);line-height:1.7;" data-i18n="aboutDesc">数据储存在本地浏览器，不上传任何服务器。<br>跨设备同步需要接入云端服务（开发中）。</div>
-        </div>
-      </div>
-
-      <!-- BACKUP & RESTORE -->
-      <div style="margin-bottom:2rem;">
-        <p class="section-label" style="margin-bottom:12px;">数据备份与恢复</p>
-        <div style="border-radius:var(--radius);border:0.5px solid var(--divider);background:var(--card);overflow:hidden;">
-
-          <!-- Export -->
-          <div style="padding:14px 16px;border-bottom:0.5px solid var(--divider);">
-            <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:3px;">导出备份</div>
-            <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px;">将所有数据复制到剪贴板，可保存到备忘录</div>
-            <button onclick="backupData()" style="width:100%;padding:11px;border-radius:12px;border:none;background:var(--ink);color:var(--sand);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">📤 导出全部数据</button>
-            <div id="backupStatus" style="display:none;margin-top:8px;padding:8px 12px;border-radius:10px;font-size:12px;"></div>
-          </div>
-
-          <!-- Import -->
-          <div style="padding:14px 16px;">
-            <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:3px;">恢复备份</div>
-            <div style="font-size:11px;color:var(--ink-muted);margin-bottom:10px;">粘贴之前导出的备份数据</div>
-            <textarea id="restoreInput" placeholder="粘贴备份数据..." style="width:100%;height:80px;padding:10px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:11px;resize:none;-webkit-appearance:none;"></textarea>
-            <button onclick="restoreData()" style="width:100%;margin-top:8px;padding:11px;border-radius:12px;border:none;background:var(--pulse);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">📥 恢复数据</button>
-            <div id="restoreStatus" style="display:none;margin-top:8px;padding:8px 12px;border-radius:10px;font-size:12px;"></div>
-          </div>
-
         </div>
       </div>
 
@@ -652,37 +610,6 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
     <div class="modal-btns">
       <button onclick="closeEdit()" data-i18n="cancel">取消</button>
       <button class="btn-confirm" onclick="saveEdit()" data-i18n="save">保存</button>
-    </div>
-  </div>
-</div>
-
-<!-- MANUAL ENTRY MODAL -->
-<div class="modal-overlay" id="manualOverlay" onclick="closeManualOutside(event)">
-  <div class="modal">
-    <h3>补录工时记录</h3>
-    <select id="manualProject" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;margin-bottom:8px;-webkit-appearance:none;appearance:none;"></select>
-    <input type="date" id="manualDate" style="width:100%;padding:9px 12px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;margin-bottom:8px;">
-    <div style="display:flex;gap:8px;margin-bottom:8px;width:100%;">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;letter-spacing:0.06em;">开始时间</div>
-        <input type="time" id="manualStart" style="width:100%;min-width:0;padding:9px 8px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:13px;-webkit-appearance:none;appearance:none;">
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:10px;color:var(--ink-muted);margin-bottom:4px;letter-spacing:0.06em;">结束时间</div>
-        <input type="time" id="manualEnd" style="width:100%;min-width:0;padding:9px 8px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Mono',monospace;font-size:13px;-webkit-appearance:none;appearance:none;">
-      </div>
-    </div>
-    <div id="manualCalc" style="background:rgba(107,143,107,0.08);border:0.5px solid rgba(107,143,107,0.3);border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:12px;color:var(--ink-muted);">计算工时</span>
-      <span id="manualDurDisplay" style="font-family:'DM Mono',monospace;font-size:16px;color:#3d6b3d;">—</span>
-    </div>
-    <div style="position:relative;margin-bottom:4px;">
-      <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--ink-muted);">$</span>
-      <input type="number" id="manualRate" min="0" placeholder="时薪（可选）" style="width:100%;padding:9px 12px 9px 26px;border-radius:10px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;">
-    </div>
-    <div class="modal-btns" style="margin-top:12px;">
-      <button onclick="closeManual()">取消</button>
-      <button class="btn-confirm" onclick="saveManualEntry()">保存</button>
     </div>
   </div>
 </div>
@@ -835,10 +762,8 @@ function renderHistory() {
   const h = loadHistory();
   const el = document.getElementById('historyList');
   if (!h.length) { el.innerHTML=`<div class="empty-hint">${t('noHistory')}</div>`; return; }
-  // Sort by date ascending
-  const sorted = [...h].sort((a,b) => (a.ts||0) - (b.ts||0));
-  el.innerHTML = sorted.map((item) => `
-    <div class="history-item" onclick="openEditByTs(${item.ts})" style="cursor:pointer;">
+  el.innerHTML = h.map((item, i) => `
+    <div class="history-item" onclick="openEdit(${i})" style="cursor:pointer;">
       <div class="h-left">
         <div class="h-proj">${item.project}</div>
         <div class="h-date">${item.dateStr}</div>
@@ -846,211 +771,18 @@ function renderHistory() {
       <div style="display:flex;align-items:center;gap:10px;">
         <span class="h-dur">${item.duration}</span>
         <span style="font-size:11px;color:var(--ink-muted);opacity:0.5;">✎</span>
-        <button onclick="event.stopPropagation();deleteHistoryByTs(${item.ts})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-muted);padding:4px;border-radius:6px;line-height:1;transition:all 0.15s;" onmouseover="this.style.color='#c0392b';this.style.background='rgba(192,57,43,0.08)'" onmouseout="this.style.color='var(--ink-muted)';this.style.background='none'">✕</button>
+        <button onclick="event.stopPropagation();deleteHistory(${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-muted);padding:4px;border-radius:6px;line-height:1;transition:all 0.15s;" onmouseover="this.style.color='#c0392b';this.style.background='rgba(192,57,43,0.08)'" onmouseout="this.style.color='var(--ink-muted)';this.style.background='none'">✕</button>
       </div>
     </div>
   `).join('');
 }
 
-function deleteHistoryByTs(ts) {
-  const h = loadHistory();
-  const idx = h.findIndex(i => i.ts === ts);
-  if (idx === -1) return;
-  const deleted = h.splice(idx, 1)[0];
-  localStorage.setItem('flow_history', JSON.stringify(h));
-  deleted._deletedAt = Date.now();
-  const trash = loadTrash();
-  trash.unshift(deleted);
-  localStorage.setItem('flow_trash', JSON.stringify(trash.slice(0, 30)));
-  renderHistory();
-  renderTrash();
-}
-
-function openEditByTs(ts) {
-  const h = loadHistory();
-  const idx = h.findIndex(i => i.ts === ts);
-  if (idx !== -1) openEdit(idx);
-}
-
 function deleteHistory(idx) {
   const h = loadHistory();
-  const deleted = h.splice(idx, 1)[0];
+  h.splice(idx, 1);
   localStorage.setItem('flow_history', JSON.stringify(h));
-  // Move to trash
-  const trash = loadTrash();
-  deleted._deletedAt = Date.now();
-  trash.unshift(deleted);
-  localStorage.setItem('flow_trash', JSON.stringify(trash.slice(0, 30)));
   renderHistory();
-  renderTrash();
 }
-
-function loadTrash() {
-  try { return JSON.parse(localStorage.getItem('flow_trash') || '[]'); } catch(e) { return []; }
-}
-
-function restoreFromTrash(idx) {
-  const trash = loadTrash();
-  const item = trash.splice(idx, 1)[0];
-  delete item._deletedAt;
-  localStorage.setItem('flow_trash', JSON.stringify(trash));
-  saveHistory(item);
-  renderHistory();
-  renderTrash();
-}
-
-function deleteFromTrash(idx) {
-  const trash = loadTrash();
-  trash.splice(idx, 1);
-  localStorage.setItem('flow_trash', JSON.stringify(trash));
-  renderTrash();
-}
-
-function clearTrash() {
-  localStorage.removeItem('flow_trash');
-  renderTrash();
-}
-
-function renderTrash() {
-  const trash = loadTrash();
-  const el = document.getElementById('trashList');
-  const btn = document.getElementById('clearTrashBtn');
-  if (!el) return;
-  if (!trash.length) {
-    el.innerHTML = `<div class="empty-hint">无已删除记录</div>`;
-    if (btn) btn.style.display = 'none';
-    return;
-  }
-  if (btn) btn.style.display = 'block';
-  el.innerHTML = trash.map((item, i) => {
-    const daysAgo = Math.floor((Date.now() - (item._deletedAt||Date.now())) / 86400000);
-    const when = daysAgo === 0 ? '今天删除' : daysAgo === 1 ? '昨天删除' : `${daysAgo}天前删除`;
-    return `<div class="history-item" style="opacity:0.75;">
-      <div class="h-left">
-        <div class="h-proj">${item.project}</div>
-        <div class="h-date">${item.dateStr} · <span style="color:var(--amber);font-size:10px;">${when}</span></div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span class="h-dur">${item.duration}</span>
-        <button onclick="restoreFromTrash(${i})" style="background:none;border:0.5px solid var(--pulse);color:#3d6b3d;border-radius:12px;padding:3px 9px;font-size:11px;cursor:pointer;">恢复</button>
-        <button onclick="deleteFromTrash(${i})" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink-muted);padding:4px;border-radius:6px;line-height:1;" onmouseover="this.style.color='#c0392b'" onmouseout="this.style.color='var(--ink-muted)'">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ─── MANUAL ENTRY ────────────────────────────────────
-function openManualEntry() {
-  const projects = loadProjects();
-  const sel = document.getElementById('manualProject');
-  sel.innerHTML = projects.length
-    ? projects.map((p,i) => `<option value="${i}">${p.name}</option>`).join('')
-    : `<option value="">无项目（请先新增）</option>`;
-  const now = new Date();
-  document.getElementById('manualDate').value =
-    now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
-  document.getElementById('manualStart').value = '';
-  document.getElementById('manualEnd').value = '';
-  document.getElementById('manualRate').value = '';
-  document.getElementById('manualDurDisplay').textContent = '—';
-  document.getElementById('manualOverlay').classList.add('open');
-  ['manualStart','manualEnd'].forEach(id => {
-    document.getElementById(id).oninput = calcManualDuration;
-  });
-}
-
-function calcManualDuration() {
-  const start = document.getElementById('manualStart').value;
-  const end   = document.getElementById('manualEnd').value;
-  const disp  = document.getElementById('manualDurDisplay');
-  if (!start || !end) { disp.textContent = '—'; return; }
-  const [sh,sm] = start.split(':').map(Number);
-  let   [eh,em] = end.split(':').map(Number);
-  let ms = ((eh*60+em) - (sh*60+sm)) * 60000;
-  if (ms <= 0) ms += 24*3600000;
-  const totalSec = Math.floor(ms/1000);
-  disp.textContent = pad(Math.floor(totalSec/3600))+':'+pad(Math.floor((totalSec%3600)/60))+':'+pad(totalSec%60);
-}
-
-function closeManual() { document.getElementById('manualOverlay').classList.remove('open'); }
-function closeManualOutside(e) { if (e.target===document.getElementById('manualOverlay')) closeManual(); }
-
-function saveManualEntry() {
-  const projects = loadProjects();
-  const projIdx  = parseInt(document.getElementById('manualProject').value);
-  const projName = projects[projIdx]?.name || '未命名项目';
-  const dateVal  = document.getElementById('manualDate').value;
-  const start    = document.getElementById('manualStart').value;
-  const end      = document.getElementById('manualEnd').value;
-  const rate     = parseFloat(document.getElementById('manualRate').value) || 0;
-  if (!dateVal || !start || !end) { alert('请填写日期、开始和结束时间'); return; }
-  const [sh,sm] = start.split(':').map(Number);
-  let   [eh,em] = end.split(':').map(Number);
-  const [y,mo,d] = dateVal.split('-').map(Number);
-  const ts = new Date(y, mo-1, d, sh, sm).getTime();
-  let ms = ((eh*60+em) - (sh*60+sm)) * 60000;
-  if (ms <= 0) ms += 24*3600000;
-  const totalSec = Math.floor(ms/1000);
-  const duration = pad(Math.floor(totalSec/3600))+':'+pad(Math.floor((totalSec%3600)/60))+':'+pad(totalSec%60);
-  const dateStr  = lang==='zh'
-    ? `${mo}月${d}日`
-    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][mo-1]+' '+d;
-  saveHistory({ project: projName, dateStr, duration, ms, ts, rate });
-  closeManual();
-  switchTab('history');
-}
-
-// ─── BREAK TIMER ─────────────────────────────────────
-let breakTimerEnd = null;
-let breakTimerInterval = null;
-
-function setBreakTimer() {
-  const mins = parseInt(document.getElementById('breakTimerSelect').value);
-  clearBreakTimer();
-  if (mins === 0) return;
-  breakTimerEnd = Date.now() + mins * 60000;
-  breakTimerInterval = setInterval(tickBreakTimer, 1000);
-  tickBreakTimer();
-  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
-}
-
-function tickBreakTimer() {
-  if (!breakTimerEnd) return;
-  const remaining = breakTimerEnd - Date.now();
-  const cd = document.getElementById('breakCountdown');
-  if (remaining <= 0) {
-    clearBreakTimer();
-    if (cd) cd.textContent = '⏰';
-    if (navigator.vibrate) navigator.vibrate([300,100,300,100,500]);
-    const title = '☕ 休息时间到了！';
-    const body  = '回去工作了 💪';
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification(title, { body, icon:'/icon-192.png', badge:'/icon-192.png', vibrate:[300,100,300,100,500], tag:'break-timer', requireInteraction:true });
-      });
-    } else if ('Notification' in window && Notification.permission==='granted') {
-      new Notification(title, { body, icon:'/icon-192.png' });
-    } else {
-      setTimeout(() => alert('⏰ 休息时间到！'), 100);
-    }
-    return;
-  }
-  const totalSec = Math.ceil(remaining/1000);
-  const m = Math.floor(totalSec/60);
-  const s = totalSec % 60;
-  if (cd) cd.textContent = m+':'+String(s).padStart(2,'0');
-}
-
-function clearBreakTimer() {
-  if (breakTimerInterval) { clearInterval(breakTimerInterval); breakTimerInterval = null; }
-  breakTimerEnd = null;
-  const cd = document.getElementById('breakCountdown');
-  if (cd) cd.textContent = '';
-  const sel = document.getElementById('breakTimerSelect');
-  if (sel) sel.value = '0';
-}
-
-
 
 function openEdit(idx) {
   const h = loadHistory();
@@ -1244,7 +976,7 @@ function openTimePicker() {
   const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
   const m = now.getMinutes();
 
-  const hours = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+  const hours = ['12','1','2','3','4','5','6','7','8','9','10','11'];
   const mins = Array.from({length:60}, (_,i) => String(i).padStart(2,'0'));
   const ampm = ['AM','PM'];
 
@@ -1252,12 +984,12 @@ function openTimePicker() {
   const minEl = document.getElementById('wheelMin');
   const ampmEl = document.getElementById('wheelAmpm');
 
-  buildWheel(hourEl, hours, h12 === 12 ? 11 : h12 - 1);
+  buildWheel(hourEl, hours, h12 === 12 ? 0 : h12);
   buildWheel(minEl, mins, m);
   buildWheel(ampmEl, ampm, isPM ? 1 : 0);
 
   requestAnimationFrame(() => {
-    scrollToIdx(hourEl, h12 === 12 ? 11 : h12 - 1);
+    scrollToIdx(hourEl, h12 === 12 ? 0 : h12);
     scrollToIdx(minEl, m);
     scrollToIdx(ampmEl, isPM ? 1 : 0);
   });
@@ -1278,7 +1010,7 @@ function closeTimePickerOutside(e) {
 }
 
 function confirmTimePicker() {
-  const hours = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+  const hours = ['12','1','2','3','4','5','6','7','8','9','10','11'];
   const hIdx = getSelectedIdx(document.getElementById('wheelHour'));
   const mIdx = getSelectedIdx(document.getElementById('wheelMin'));
   const apIdx = getSelectedIdx(document.getElementById('wheelAmpm'));
@@ -1362,10 +1094,6 @@ function endWork() {
   saveHistory({ project: projName, dateStr: fmtDate(Date.now()), duration: fmtDuration(net), ms: net, ts: Date.now(), rate });
 
   applyState(); save();
-  // Reset timer display to 0 after a short delay
-  setTimeout(() => {
-    document.getElementById('timerDisplay').textContent = '00:00:00';
-  }, 100);
 }
 
 function resetAll() {
@@ -1404,92 +1132,12 @@ function addProject() {
 }
 
 // ─── TABS ─────────────────────────────────────────────
-// ─── BACKUP & RESTORE ────────────────────────────────
-const BACKUP_KEYS = ['flow_history','flow_projects','flow_state','flow_selected_project','flow_trash','flow_lang','flow_geo'];
-
-function backupData() {
-  const data = {};
-  let count = 0;
-  BACKUP_KEYS.forEach(k => {
-    const v = localStorage.getItem(k);
-    if (v) { data[k] = v; count++; }
-  });
-  if (count === 0) {
-    showBackupStatus('backupStatus', 'error', '没有找到任何数据');
-    return;
-  }
-  const json = JSON.stringify(data);
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(json).then(() => {
-      const hist = data['flow_history'] ? JSON.parse(data['flow_history']).length : 0;
-      showBackupStatus('backupStatus', 'success', `✅ 已复制到剪贴板！共 ${hist} 条记录。可粘贴到备忘录保存。`);
-    }).catch(() => showBackupFallback(json));
-  } else {
-    showBackupFallback(json);
-  }
-}
-
-function showBackupFallback(json) {
-  const ta = document.getElementById('restoreInput');
-  ta.value = json;
-  ta.select();
-  showBackupStatus('backupStatus', 'info', '请长按下方文字框全选后手动复制');
-}
-
-function restoreData() {
-  const input = document.getElementById('restoreInput').value.trim();
-  if (!input) {
-    showBackupStatus('restoreStatus', 'error', '请先粘贴备份数据');
-    return;
-  }
-  let data;
-  try { data = JSON.parse(input); } catch(e) {
-    showBackupStatus('restoreStatus', 'error', '数据格式不对，请重新复制粘贴');
-    return;
-  }
-  let count = 0; let histCount = 0;
-  BACKUP_KEYS.forEach(k => {
-    if (data[k]) {
-      localStorage.setItem(k, data[k]);
-      count++;
-      if (k === 'flow_history') {
-        try { histCount = JSON.parse(data[k]).length; } catch(e) {}
-      }
-    }
-  });
-  if (count === 0) {
-    showBackupStatus('restoreStatus', 'error', '没有找到可恢复的数据');
-    return;
-  }
-  showBackupStatus('restoreStatus', 'success', `✅ 恢复成功！${histCount} 条历史记录已还原。`);
-  setTimeout(() => {
-    renderHistory();
-    renderTrash();
-    renderProjects();
-    load();
-    applyState();
-  }, 300);
-}
-
-function showBackupStatus(id, type, msg) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const colors = {
-    success: { bg:'rgba(107,143,107,0.1)', color:'#3d6b3d', border:'rgba(107,143,107,0.3)' },
-    error:   { bg:'rgba(192,57,43,0.08)', color:'#c0392b', border:'rgba(192,57,43,0.2)' },
-    info:    { bg:'rgba(44,39,32,0.05)',  color:'#2C2720', border:'#E0DBD3' },
-  };
-  const c = colors[type] || colors.info;
-  el.style.cssText = `display:block;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.6;background:${c.bg};color:${c.color};border:0.5px solid ${c.border};`;
-  el.textContent = msg;
-}
-
 function switchTab(tab) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
-  if (tab === 'history') { renderHistory(); renderTrash(); }
+  if (tab === 'history') renderHistory();
   if (tab === 'export') renderExportPreview();
   if (tab === 'settings') renderGeoSettings();
 }
@@ -1498,6 +1146,33 @@ function switchTab(tab) {
 let geoWatchId = null;
 let geoRadius = 200;
 let geoReminderShown = false;
+
+
+function autoRequestGeoNotificationOnce() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'default') return;
+  const prefs = loadGeoPrefs();
+  if (prefs.geoNotifyAutoAsked || prefs.geoNotifyUserConsented) return;
+  prefs.geoNotifyAutoAsked = true;
+  saveGeoPrefs(prefs);
+  Notification.requestPermission().then(() => {
+    const p = loadGeoPrefs();
+    if (Notification.permission === 'granted') p.geoNotifyUserConsented = true;
+    saveGeoPrefs(p);
+    renderGeoSettings();
+  });
+}
+
+function manualRequestGeoNotify() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'default') return;
+  Notification.requestPermission().then(() => {
+    const p = loadGeoPrefs();
+    if (Notification.permission === 'granted') p.geoNotifyUserConsented = true;
+    saveGeoPrefs(p);
+    renderGeoSettings();
+  });
+}
 
 function loadGeoPrefs() {
   try { return JSON.parse(localStorage.getItem('flow_geo') || '{}'); } catch(e) { return {}; }
@@ -1508,6 +1183,10 @@ function saveGeoPrefs(prefs) {
 
 function renderGeoSettings() {
   const prefs = loadGeoPrefs();
+  if ('Notification' in window && Notification.permission === 'granted' && !prefs.geoNotifyUserConsented) {
+    prefs.geoNotifyUserConsented = true;
+    saveGeoPrefs(prefs);
+  }
   const toggle = document.getElementById('geoToggle');
   const track = document.getElementById('geoTrack');
   const thumb = document.getElementById('geoThumb');
@@ -1533,6 +1212,37 @@ function renderGeoSettings() {
     status.style.color = 'var(--ink-muted)';
     document.getElementById('saveLocBtn').textContent = t('saveLocBtn');
   }
+
+  const nb = document.getElementById('geoNotifyBlock');
+  const ns = document.getElementById('geoNotifyStatus');
+  const btn = document.getElementById('geoNotifyBtn');
+  if (nb && ns && btn && prefs.enabled && prefs.lat && prefs.lng) {
+    nb.style.display = 'block';
+    if (!('Notification' in window)) {
+      ns.textContent = lang==='zh' ? '当前环境不支持通知，到达时仅能在应用内提醒。' : 'Notifications not supported. In-app alerts only.';
+      btn.style.display = 'none';
+    } else if (Notification.permission === 'granted' || prefs.geoNotifyUserConsented) {
+      ns.innerHTML = (lang==='zh' ? '✅ 到达提醒已开启。' : '✅ Arrival alerts are on.') +
+        '<br><span style="opacity:0.75;font-size:10px;">' +
+        (lang==='zh' ? 'iPhone：设置 → 通知 → Safari → 开启「锁定屏幕」' : 'iPhone: Settings → Notifications → Safari → enable Lock Screen') + '</span>';
+      btn.style.display = 'none';
+    } else if (Notification.permission === 'denied') {
+      ns.innerHTML = (lang==='zh' ? '🔕 通知已关闭，到达时仅显示应用内横幅。' : '🔕 Notifications off. In-app banner only.') +
+        '<br><span style="opacity:0.75;font-size:10px;">' +
+        (lang==='zh' ? '可在手机设置 → 通知 中重新开启。' : 'Re-enable in Settings → Notifications.') + '</span>';
+      btn.style.display = 'none';
+    } else {
+      ns.textContent = lang==='zh'
+        ? (prefs.geoNotifyAutoAsked ? '之前未点「允许」，可再次授权，只需一次。' : '请点下方按钮开启通知，到达办公室时像休息提醒一样推送，只需授权一次。')
+        : (prefs.geoNotifyAutoAsked ? 'Missed the prompt? Tap below to try again.' : 'Allow notifications to get arrival alerts like the break timer. Only asked once.');
+      btn.textContent = lang==='zh'
+        ? (prefs.geoNotifyAutoAsked ? '再次请求通知权限' : '开启到达通知')
+        : (prefs.geoNotifyAutoAsked ? 'Request again' : 'Allow notifications');
+      btn.style.display = 'block';
+    }
+  } else if (nb) {
+    nb.style.display = 'none';
+  }
 }
 
 function toggleGeo() {
@@ -1550,11 +1260,8 @@ function toggleGeo() {
   saveGeoPrefs(prefs);
 
   if (enabled) {
+    autoRequestGeoNotificationOnce();
     startGeoWatch();
-    // 开启地理围栏时同时请求通知权限
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
   } else stopGeoWatch();
 }
 
@@ -1599,6 +1306,34 @@ function getDistanceM(lat1, lng1, lat2, lng2) {
 function startGeoWatch() {
   if (!navigator.geolocation) return;
   stopGeoWatch();
+
+  // Show one-time guide if not shown before
+  if (!localStorage.getItem('flow_geo_guide_shown')) {
+    localStorage.setItem('flow_geo_guide_shown', '1');
+    // Show a gentle guide after a short delay
+    setTimeout(() => {
+      const guide = document.createElement('div');
+      guide.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;';
+      guide.innerHTML = `
+        <div style="background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:420px;padding:1.5rem 1.5rem 2.5rem;">
+          <div style="text-align:center;margin-bottom:1rem;">
+            <div style="font-size:28px;margin-bottom:8px;">📍</div>
+            <div style="font-size:15px;font-weight:500;color:var(--ink);margin-bottom:6px;">开启永久定位，让提醒更准时</div>
+            <div style="font-size:12px;color:var(--ink-muted);line-height:1.7;">为了让 Flow 每次都能检测到你到达办公室，请按以下步骤设置：</div>
+          </div>
+          <div style="background:var(--sand);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
+            <div style="font-size:12px;color:var(--ink);line-height:2;">
+              1️⃣ 打开手机<strong>「设置」</strong><br>
+              2️⃣ 隐私与安全 → <strong>定位服务</strong><br>
+              3️⃣ 找到 <strong>Safari 网站</strong><br>
+              4️⃣ 改为 <strong>「使用 App 期间」</strong>
+            </div>
+          </div>
+          <button onclick="this.parentElement.parentElement.remove()" style="width:100%;padding:13px;border-radius:14px;border:none;background:var(--ink);color:var(--sand);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">知道了</button>
+        </div>`;
+      document.body.appendChild(guide);
+    }, 1500);
+  }
 
   // Track if user has left the office so we can remind again next arrival
   let wasOutside = true;
@@ -1690,7 +1425,7 @@ function selectRange(btn) {
 function getFilteredHistory() {
   const all = loadHistory();
   const now = new Date();
-  const filtered = all.filter(item => {
+  return all.filter(item => {
     const d = new Date(item.ts || Date.now());
     if (currentRange === 'today') {
       return d.toDateString() === now.toDateString();
@@ -1702,33 +1437,6 @@ function getFilteredHistory() {
     }
     return true;
   });
-  // Sort by date ascending (oldest first), use dateStr as fallback
-  return filtered.sort((a, b) => {
-    const tsA = a.ts || parseDateStr(a.dateStr);
-    const tsB = b.ts || parseDateStr(b.dateStr);
-    return tsA - tsB;
-  });
-}
-
-function parseDateStr(dateStr) {
-  if (!dateStr) return 0;
-  // Handle "3月10日" format
-  const zhMatch = dateStr.match(/(\d+)月(\d+)日/);
-  if (zhMatch) {
-    const now = new Date();
-    return new Date(now.getFullYear(), parseInt(zhMatch[1]) - 1, parseInt(zhMatch[2])).getTime();
-  }
-  // Handle "Mar 10" format
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const enMatch = dateStr.match(/([A-Za-z]+)\s+(\d+)/);
-  if (enMatch) {
-    const mo = months.indexOf(enMatch[1]);
-    if (mo >= 0) {
-      const now = new Date();
-      return new Date(now.getFullYear(), mo, parseInt(enMatch[2])).getTime();
-    }
-  }
-  return 0;
 }
 
 function msToHours(ms) { return (ms / 3600000).toFixed(1); }
@@ -1801,10 +1509,7 @@ async function exportPDF() {
   <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap');
     * { box-sizing:border-box; margin:0; padding:0; }
-    body { font-family:'DM Sans',sans-serif; color:#2C2720; background:#fff; padding:20px 16px 80px; }
-    .topbar { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#2C2720; margin:-20px -16px 20px; }
-    .topbar button { background:rgba(255,255,255,0.15); border:none; color:#F5F2ED; padding:7px 16px; border-radius:20px; font-size:13px; cursor:pointer; }
-    @media print { .topbar { display:none; } body { padding:8mm 10mm 8mm; } }
+    body { font-family:'DM Sans',sans-serif; color:#2C2720; background:#fff; padding:12mm 14mm; }
     .header { background:#F5F2ED; padding:12px 16px; border-radius:8px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:flex-end; }
     .header h1 { font-size:20px; font-weight:500; }
     .header p { font-size:11px; color:#7A7269; }
@@ -1821,13 +1526,6 @@ async function exportPDF() {
     .footer { margin-top:20px; padding-top:10px; border-top:0.5px solid #E0DBD3; display:flex; justify-content:space-between; font-size:10px; color:#7A7269; }
     @media print { body { padding:8mm 10mm; } }
   </style></head><body>
-  <div class="topbar">
-    <span style="font-size:13px;color:#F5F2ED;">工时报告预览</span>
-    <div style="display:flex;gap:8px;">
-      <button onclick="history.back()">← 返回</button>
-      <button onclick="window.print()">打印 / 存为 PDF</button>
-    </div>
-  </div>
   <div class="header">
     <div><p style="font-size:10px;color:#7A7269;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px">${t('reportHeader')}</p><h1>${ranges()[currentRange]} ${lang==='zh'?'工时报告':'Report'}</h1></div>
     <p>${lang==='zh'?now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日':['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][now.getMonth()]+' '+now.getDate()+', '+now.getFullYear()}</p>
@@ -1850,9 +1548,9 @@ async function exportPDF() {
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`;
 
-  const blob = new Blob([html], {type:'text/html'});
-  const url = URL.createObjectURL(blob);
-  location.href = url;
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
 }
 
 async function exportExcel() {
@@ -2088,7 +1786,6 @@ if ('serviceWorker' in navigator) {
       const newWorker = reg.installing;
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          // New version available - show update banner
           const banner = document.createElement('div');
           banner.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#2C2720;color:#F5F2ED;padding:10px 20px;border-radius:20px;font-size:13px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.2);white-space:nowrap;';
           banner.innerHTML = `<span>🆕 有新版本</span><button onclick="window.location.reload()" style="background:var(--pulse);border:none;color:#fff;padding:5px 14px;border-radius:12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">立即更新</button>`;
@@ -2096,9 +1793,7 @@ if ('serviceWorker' in navigator) {
         }
       });
     });
-  }).catch(() => {
-    navigator.serviceWorker.register('/FLOW/sw.js');
-  });
+  }).catch(() => { navigator.serviceWorker.register('/FLOW/sw.js'); });
 }
 </script>
 </body>
