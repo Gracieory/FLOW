@@ -919,15 +919,71 @@ function applyState() {
 }
 
 // ─── TIMER TICK ──────────────────────────────────────
+// Track which hour milestones have been alerted
+let workHourAlerted = new Set();
+
 function tick() {
   if (state === S.RUNNING) {
     const net = getNetWork();
     document.getElementById('timerDisplay').textContent = fmtDuration(net);
     document.getElementById('totalVal').textContent = fmtDuration(net);
+
+    // Check 7h and 8h milestones
+    const hours = Math.floor(net / 3600000);
+    [7, 8].forEach(h => {
+      if (hours >= h && !workHourAlerted.has(h)) {
+        workHourAlerted.add(h);
+        fireWorkHourReminder(h);
+      }
+    });
   } else if (state === S.BREAK) {
     const bd = Date.now() - breakStartTs;
     document.getElementById('breakDurText').textContent = t('paused')+' '+fmtDuration(bd);
   }
+}
+
+function fireWorkHourReminder(hours) {
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+
+  const title = lang==='zh' ? `已工作 ${hours} 小时 ⏰` : `${hours} hours worked ⏰`;
+  const body  = hours >= 8
+    ? (lang==='zh' ? '你还在工作吗？记得休息一下 💆' : 'Still working? Time for a break 💆')
+    : (lang==='zh' ? '已连续工作 7 小时，要休息一下吗？' : '7 hours in. Consider taking a break?');
+
+  // Try system notification first
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller && Notification.permission === 'granted') {
+    navigator.serviceWorker.ready.then(reg => {
+      reg.showNotification(title, {
+        body,
+        icon: '/icon-192.png',
+        tag: `work-hour-${hours}`,
+        requireInteraction: true,
+        vibrate: [200, 100, 200],
+      });
+    });
+    return;
+  }
+
+  // Fallback: in-app banner
+  const existing = document.getElementById('workHourBanner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'workHourBanner';
+  banner.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;z-index:400;padding:1rem 1.25rem 0;';
+  banner.innerHTML = `
+    <div style="background:var(--card);border-radius:var(--radius);border:0.5px solid rgba(196,154,60,0.4);padding:14px 16px;box-shadow:0 4px 24px rgba(0,0,0,0.12);">
+      <div style="font-size:13px;font-weight:500;color:#7a5e1a;margin-bottom:4px;">${title}</div>
+      <div style="font-size:12px;color:var(--ink-muted);margin-bottom:12px;">${body}</div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="document.getElementById('workHourBanner').remove()" style="flex:1;padding:8px;border-radius:20px;border:0.5px solid var(--divider);background:var(--sand);color:var(--ink-muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">${lang==='zh'?'继续工作':'Keep working'}</button>
+        <button onclick="document.getElementById('workHourBanner').remove();goBreak();" style="flex:2;padding:8px;border-radius:20px;border:none;background:rgba(196,154,60,0.15);color:#7a5e1a;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;">${lang==='zh'?'☕ 休息一下':'☕ Take a break'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(banner);
+
+  // Auto-dismiss after 30 seconds
+  setTimeout(() => { if (document.getElementById('workHourBanner')) document.getElementById('workHourBanner').remove(); }, 30000);
 }
 
 // ─── WHEEL TIME PICKER ───────────────────────────────
@@ -976,7 +1032,7 @@ function openTimePicker() {
   const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
   const m = now.getMinutes();
 
-  const hours = ['12','1','2','3','4','5','6','7','8','9','10','11'];
+  const hours = ['1','2','3','4','5','6','7','8','9','10','11','12'];
   const mins = Array.from({length:60}, (_,i) => String(i).padStart(2,'0'));
   const ampm = ['AM','PM'];
 
@@ -984,12 +1040,12 @@ function openTimePicker() {
   const minEl = document.getElementById('wheelMin');
   const ampmEl = document.getElementById('wheelAmpm');
 
-  buildWheel(hourEl, hours, h12 === 12 ? 0 : h12);
+  buildWheel(hourEl, hours, h12 === 12 ? 11 : h12 - 1);
   buildWheel(minEl, mins, m);
   buildWheel(ampmEl, ampm, isPM ? 1 : 0);
 
   requestAnimationFrame(() => {
-    scrollToIdx(hourEl, h12 === 12 ? 0 : h12);
+    scrollToIdx(hourEl, h12 === 12 ? 11 : h12 - 1);
     scrollToIdx(minEl, m);
     scrollToIdx(ampmEl, isPM ? 1 : 0);
   });
@@ -1010,12 +1066,12 @@ function closeTimePickerOutside(e) {
 }
 
 function confirmTimePicker() {
-  const hours = ['12','1','2','3','4','5','6','7','8','9','10','11'];
+  const hours = ['1','2','3','4','5','6','7','8','9','10','11','12'];
   const hIdx = getSelectedIdx(document.getElementById('wheelHour'));
   const mIdx = getSelectedIdx(document.getElementById('wheelMin'));
   const apIdx = getSelectedIdx(document.getElementById('wheelAmpm'));
 
-  const h12 = parseInt(hours[Math.min(hIdx, 11)]);
+  const h12 = parseInt(hours[Math.min(hIdx, 11)]); // 1-12
   const isPM = apIdx === 1;
   let h24 = h12 % 12 + (isPM ? 12 : 0);
 
@@ -1049,6 +1105,7 @@ function startWork() {
   workStartTs = getStartTs();
   sessions = [{ type:'work', start: workStartTs, end: null }];
   state = S.RUNNING;
+  workHourAlerted = new Set();
   clearBackfill();
   clearInterval(tickInterval); tickInterval = setInterval(tick, 1000);
   applyState(); save();
